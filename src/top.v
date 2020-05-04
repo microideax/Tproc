@@ -41,7 +41,7 @@ module top#(
         input   wire                 arm_read_feature_select,
         
         // input instr_mem_enable,
-        input [9:0] instr_mem_addr,
+//        input [9:0] instr_mem_addr,
         input [63:0] instr_port,
         
         input   wire                 acc_enable,
@@ -222,7 +222,7 @@ i_feature_fetch input_fetch(
                        .i_mem_select(arm_write_feature_select) );
                                                
                     
-/*                    
+                 
 //wire CLP_enable;
 wire CLP_data_delay; 
 
@@ -311,7 +311,7 @@ o_f_unit output_feature_unit(
     .arm_read_feature_select(arm_read_feature_select),
     .state(CLP_state)
 );
-*/
+
         
  /*
 // only enable this part of code during cycle counting test, either for the component sync or performance measurement        
