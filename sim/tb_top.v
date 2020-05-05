@@ -44,7 +44,7 @@ top mytest(
         .arm_read_feature_data(),
         .arm_read_feature_select(),
         
-        .instr_mem_addr(),
+        // .instr_mem_addr(),
         .instr_port(),
         
         .acc_enable(acc_enable),

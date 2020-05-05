@@ -82,6 +82,8 @@ dp_ram instruction_mem(
     .dia(fetcher_to_imem),
     .dob(i_mem_dout));
 */
+
+// use sync fifo instead of the bram for the instructions
 syn_fifo instruction_mem(
     .clk(clk),
     .rst(rst),
@@ -94,7 +96,7 @@ syn_fifo instruction_mem(
     .empty(i_mem_empty),
     .full()
 );
-
+/*
 wire  [3:0]state;
 
 wire instruction_enable;
@@ -114,7 +116,6 @@ top_fsm CLP_fsm(
             .ctr(ctr)
             ); 
  
-
 wire f_mem_enable_0;
 wire [14:0]  f_mem_addr_0;
 wire [FEATURE_WIDTH*2 - 1 : 0]      f_mem_data_0;
@@ -311,7 +312,7 @@ o_f_unit output_feature_unit(
     .arm_read_feature_select(arm_read_feature_select),
     .state(CLP_state)
 );
-
+*/
         
  /*
 // only enable this part of code during cycle counting test, either for the component sync or performance measurement        

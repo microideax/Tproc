@@ -1,6 +1,7 @@
 // Instruction analysis 
 // Decoding the input instructions and send to different components
-// TODO: The future operational pipeline of the Instructions need to be considered. 
+// ERROR: The instruction need to be operation based, which means 
+// different opcode represents different variable distribution
 
 `timescale 1ns / 1ps
 

@@ -1,25 +1,8 @@
 // dummy instruction fetch module
 
-/*
-Mannually generated instructions for function verification
-|63-57| opcode
-|56-49| feature_size
-|48| feature_out_select
-|47| feature_in_select
-|
-*/
-
 
 /* test case instructions
-opcode = 0000001 // fetch_f
-f_size = 00010000 // 16
-f_out_s = 0
-f_i_s = 0
-w_mem_init_addr = 16'h0000
-s_mem_addr = 8'h00
-CLP_work_time = 16'h0000
-current_kernel_size = 3'b101
-CLP_type = 4'b0001 // instr_fetch
+04 00 00 00 01 00 00 00 // fetch feature to feature_mem 1
 */
 
 module instr_fetch(
@@ -35,7 +18,14 @@ output reg fetch_flag
 );
 
 reg [4:0] fetch_cnt;
+reg [127:0] test_instr [15:0];
 
+integer i;
+initial begin
+  test_instr[0] = 64'h0400000001000000;
+  for (i=1;i<16;i=i+1)
+    test_instr[i] = i;
+end
 
 always @ (posedge clk) begin
     if (rst) begin
@@ -70,7 +60,7 @@ always@(posedge clk) begin
     end 
     else begin
         o_instr_enable <= fetch_flag;
-        o_instr <= fetch_cnt;
+        o_instr <= test_instr[fetch_cnt];
         o_instr_addr <= fetch_cnt;
     end
 end
