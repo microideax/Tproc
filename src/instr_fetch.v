@@ -22,7 +22,7 @@ reg [127:0] test_instr [15:0];
 
 integer i;
 initial begin
-  test_instr[0] = 64'h0400000001000000;
+  test_instr[0] = 64'h0400000000000100;
   for (i=1;i<16;i=i+1)
     test_instr[i] = i;
 end

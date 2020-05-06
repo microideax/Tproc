@@ -6,75 +6,95 @@
 `timescale 1ns / 1ps
 
 module instruction_decode(
-       input   wire                                         clk,
-       input   wire                                         rst,
-       input   wire  [63:0]                                 instruction,
-       input   wire                                         CLP_enable,
-       output  reg   [63:57]                                opcode,
-       output  reg   [7:0]                                  feature_size,
-       output  reg                                          feature_out_select,     //    0:   CLP write feature to ram0           1:  CLP write feature to ram1
-       output  reg                                          feature_in_select,       //   0 :  CLP read feature from ram0          1:  CLP read feature from ram1
-       output  reg   [15:0]                                 weight_mem_init_addr,
-       output  reg   [7:0]                                  scaler_mem_addr,
-       output  reg   [15:0]                                 CLP_work_time,
-       output  reg   [2:0]                                  current_kernel_size,
-//       output  reg   [10:0]                                 feature_amount,
-       output  reg   [3:0]                                  CLP_type );
+       input   wire             clk,
+       input   wire             rst,
+       input   wire  [63:0]     instruction,
+       input   wire             instr_enable,
+
+       output  reg feature_fetch_enable,
+       output  reg weight_fetch_enable,
+       output  reg instr_fetch_enable,
+
+        output reg [7:0]        fetch_type,
+       output  reg   [15:0]     src_addr,
+
+       output  reg   [7:0]      feature_size,
+       output  reg              feature_out_select,     //    0:   CLP write feature to ram0           1:  CLP write feature to ram1
+       output  reg              feature_in_select,       //   0 :  CLP read feature from ram0          1:  CLP read feature from ram1
+       output  reg   [15:0]     weight_mem_init_addr,
+       output  reg   [7:0]      scaler_mem_addr,
+       output  reg   [15:0]     CLP_work_time,
+       output  reg   [2:0]      current_kernel_size,
+//       output  reg   [10:0]   feature_amount,
+       output  reg   [3:0]      CLP_type );
     
-reg [10:0] feature_amount;    
+reg [10:0] feature_amount; 
+
+reg [7:0] opcode;
+reg [7:0] reg_1;
+reg [7:0] reg_2;
+reg [7:0] reg_3;
+reg [7:0] reg_4;
+reg [7:0] reg_5;
+reg [7:0] reg_6;
+reg [7:0] reg_7;
+
+always@(posedge clk) begin
+    if(rst) begin
+        opcode <= 0;
+        reg_1  <= 0;
+        reg_2  <= 0;
+        reg_3  <= 0;
+        reg_4  <= 0;
+        reg_5  <= 0;
+        reg_6  <= 0;
+        reg_7  <= 0;
+    end 
+    else begin
+        if(instr_enable) begin
+            opcode <= instruction[63:56];
+            reg_1  <= instruction[55:48];
+            reg_2  <= instruction[47:40];
+            reg_3  <= instruction[39:32];
+            reg_4  <= instruction[31:24];
+            reg_5  <= instruction[23:16];
+            reg_6  <= instruction[15:8];
+            reg_7  <= instruction[7:0];
+        end else begin
+            opcode <= opcode;
+            reg_1 <= reg_1;
+            reg_2 <= reg_2;
+            reg_3 <= reg_3;
+            reg_4 <= reg_4;
+            reg_5 <= reg_5;
+            reg_6 <= reg_6;
+            reg_7 <= reg_7;
+        end
+    end
+end
     
-always@(posedge clk)
-   if(rst)
-       begin
-           CLP_type                     <= 0;
-           current_kernel_size          <= 0;
-           CLP_work_time                <= 0;
-           scaler_mem_addr              <= 0;
-           weight_mem_init_addr         <= 0;
-           feature_amount               <= 0;
-           feature_in_select            <= 0;
-           feature_out_select           <= 0;
-           feature_size                 <= 0;
-       end   
-   else
-       begin
-           if(CLP_enable == 1)
-               begin
-                   opcode                  <= instruction[63:57];
-                   feature_size            <= instruction[56:49]; 
-                   feature_out_select      <= instruction[48];
-                   feature_in_select       <= instruction[47];     
-                   weight_mem_init_addr    <= instruction[46:31];   
-                   scaler_mem_addr         <= instruction[30:23];
-                   CLP_work_time           <= instruction[22:7];
-                   current_kernel_size     <= instruction[6:4];
-                   CLP_type                <= instruction[3:0];   
-               end
-           else
-               begin
-                   opcode                  <= opcode;
-                   feature_size            <= feature_size;
-                   feature_out_select      <= feature_out_select;
-                   feature_in_select       <= feature_in_select;
-                   weight_mem_init_addr    <= weight_mem_init_addr;
-                   scaler_mem_addr         <= scaler_mem_addr;
-                   CLP_work_time           <= CLP_work_time;
-                   current_kernel_size     <= current_kernel_size; 
-                   CLP_type                <= CLP_type;
-//                   feature_amount          <= feature_amount;
-               end
-       end  
+always@(posedge clk) begin
+    case (opcode)
+        8'h01: begin
+            feature_fetch_enable <= ~reg_1[0];
+            weight_fetch_enable <= reg_1[0];
+        end
+        8'h02: begin
+            feature_fetch_enable <= ~reg_1[0];
+            weight_fetch_enable <= reg_1[0];
+        end
+        8'h04: begin
+            feature_fetch_enable <= ~reg_1[0];
+            weight_fetch_enable  <= reg_1[0];
+            src_addr <= {reg_1, reg_2};
+            fetch_type <= opcode;
+        end
+        default: begin
+            feature_fetch_enable <= 1'b0;
+            weight_fetch_enable <= 1'b0;
+        end
+    endcase
+end
+
+
 endmodule
-//
-
-/*
-
-                   CLP_type                <= instruction[3:0];
-                   current_kernel_size     <= instruction[6:4];
-                   CLP_work_time           <= instruction[17:7];    //
-                   scaler_mem_addr         <= instruction[23:18];   //
-                   weight_mem_init_addr    <= instruction[39:24];
-                   feature_amount          <= instruction[50:40];
-                   feature_in_select       <= instruction[51];
-                   feature_out_select      <= instruction[52];
-                   feature_size            <= instruction[58:53];*/

@@ -14,7 +14,7 @@ module top_fsm(
 
     input               acc_enable,
     input               i_mem_empty,
-    input               CLP_state,
+    input               instr_exe_state, // this signal indicate the instruction is executed, then move to the next one
 
     input [63:0]        i_mem_din,
     
@@ -57,15 +57,15 @@ always@(posedge clk)
                             fetch_instruction_from_ddr <= 1'b1;
                         end
                 end
-                6'b000010:begin // instruction mem not empty
+                6'b000010:begin // instruction mem not empty, read instruction to instrution bus 'ctr'
                     state <= state << 1;
                     fetch_instruction_from_ddr <= 1'b0;
                     i_mem_rd_enable <= 1'b1;
-                    ctr <= i_mem_din;
                     instruction_enable <= 1'b1;
                 end
                 6'b000100:begin // fetch instruction from i_mem
                     instruction_enable<=1'b0;
+                    ctr <= i_mem_din;
                     i_mem_rd_enable <= 1'b0;
                     state <= state << 1;
                 end
@@ -73,7 +73,7 @@ always@(posedge clk)
                     state <= state << 1;
                 end  
                 6'b010000:begin // instruction execution stage
-                    if(CLP_state == 1) 
+                    if(instr_exe_state == 1) 
                     begin
                         state <= 6'b000000;
                         i_mem_addr <= i_mem_addr + 1'b1;

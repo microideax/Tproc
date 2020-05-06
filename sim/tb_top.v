@@ -47,8 +47,8 @@ top mytest(
         // .instr_mem_addr(),
         .instr_port(),
         
-        .acc_enable(acc_enable),
-        .CLP_state()      //0 CLP idle    1 CLP busy
+        .acc_enable(acc_enable)
+        // .CLP_state()      //0 CLP idle    1 CLP busy
         );
 
 
