@@ -91,6 +91,7 @@ ram_dp_ar_aw #(DATA_WIDTH,ADDR_WIDTH) DP_RAM (
 .oe_1      (rd_en)        // output enable
 );     
 */
+/*
 dp_ram #(RAM_DEPTH, ADDR_WIDTH, DATA_WIDTH) ram_for_fifo (
     .clk(clk),
     .ena(wr_en),
@@ -101,5 +102,60 @@ dp_ram #(RAM_DEPTH, ADDR_WIDTH, DATA_WIDTH) ram_for_fifo (
     .dia(data_in),
     .dob(data_ram)
 );
+*/
+true_dpram_sclk #(DATA_WIDTH, ADDR_WIDTH, RAM_DEPTH) ram_for_fifo (
+  .data_a(data_in),
+  .data_b(),
+  .addr_a(wr_pointer),
+  .addr_b(rd_pointer),
+  .we_a(wr_en),
+  .we_b(rd_en),
+  .clk(clk),
+  .q_a(),
+  .q_b(data_ram)
+);
 
+endmodule
+
+module true_dpram_sclk #(
+  parameter DATA_WIDTH = 64,
+  parameter ADDR_WIDTH = 4,
+  parameter RAM_DEPTH = (1 << ADDR_WIDTH)
+)(
+	input [DATA_WIDTH-1:0] data_a, data_b,
+	input [ADDR_WIDTH-1:0] addr_a, addr_b,
+	input we_a, we_b, clk,
+	output reg [DATA_WIDTH-1:0] q_a, q_b
+);
+	// Declare the RAM variable
+	reg [DATA_WIDTH-1:0] ram[RAM_DEPTH-1:0];
+	
+	// Port A
+	always @ (posedge clk)
+	begin
+		if (we_a) 
+		begin
+			ram[addr_a] <= data_a;
+			q_a <= data_a;
+		end
+		else 
+		begin
+			q_a <= ram[addr_a];
+		end
+	end
+	
+	// Port B
+	always @ (posedge clk)
+	begin
+		if (we_b)
+		begin
+			ram[addr_b] <= data_b;
+			q_b <= data_b;
+		end
+		else
+		begin
+			q_b <= ram[addr_b];
+		end
+	end
+	
 endmodule

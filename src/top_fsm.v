@@ -23,16 +23,18 @@ module top_fsm(
     
     output reg          fetch_instruction_from_ddr,
     output reg          instruction_enable,
-    output reg [63:0]   ctr
+    output wire [63:0]   ctr
     ); 
 
 reg [6:0] state;
+
+assign ctr = i_mem_din;
 
 always@(posedge clk)
     if(rst)
         begin
             instruction_enable <= 0;
-            ctr <= 0;
+            // ctr <= 0;
             state <= 6'b000000;
             fetch_instruction_from_ddr <= 1'b0;
             i_mem_rd_enable <= 1'b0;
@@ -61,16 +63,16 @@ always@(posedge clk)
                     state <= state << 1;
                     fetch_instruction_from_ddr <= 1'b0;
                     i_mem_rd_enable <= 1'b1;
-                    instruction_enable <= 1'b1;
                 end
                 6'b000100:begin // fetch instruction from i_mem
-                    instruction_enable<=1'b0;
-                    ctr <= i_mem_din;
                     i_mem_rd_enable <= 1'b0;
+                    instruction_enable <= 1'b1;
                     state <= state << 1;
                 end
                 6'b001000:begin // instruction decoding stage
                     state <= state << 1;
+                    instruction_enable<=1'b0;
+                    // ctr <= i_mem_din;
                 end  
                 6'b010000:begin // instruction execution stage
                     if(instr_exe_state == 1) 

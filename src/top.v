@@ -34,6 +34,8 @@ module top#(
         input   wire                 rst,
   
         input   wire  [127 : 0]      i_data_bus_port,
+        output  wire  [15:0]         i_feature_addr,
+        output  wire                 i_feature_rd_en,
          
         input   wire                 arm_read_feature_enable,
         input   wire  [15+2:0]       arm_read_feature_addr,
@@ -116,6 +118,74 @@ top_fsm CLP_fsm(
             .ctr(ctr)
             ); 
  
+
+wire     [3:0]           CLP_type;
+wire     [7:0]           scaler_mem_addr;
+wire     [15:0]          weight_mem_init_addr;
+wire                     feature_in_select; 
+wire                     feature_out_select;
+wire CLP_output_flag;
+wire  [ Tm * FEATURE_WIDTH - 1 : 0 ]        CLP_output;
+wire     [15:0]          CLP_work_time;
+wire     [2:0]           current_kernel_size;
+wire     [7:0]           feature_size;
+wire  CLP_data_ready;
+
+wire feature_fetch_enable;
+wire weight_fetch_enable;
+wire instr_fetch_enable;
+wire [7:0] fetch_type;
+wire [15:0] src_addr;
+wire [7:0]  dst_addr;
+wire [7:0]  mem_sel;
+
+
+instruction_decode instruction_decode_0(
+                      .clk(clk),
+                      .rst(rst),
+                      .instruction(ctr),
+                      .instr_enable(instruction_enable),
+                      
+                      .feature_fetch_enable(feature_fetch_enable),
+                      .weight_fetch_enable(weight_fetch_enable),
+                      .instr_fetch_enable(instr_fetch_enable),
+
+                      .fetch_type(fetch_type),
+                      .src_addr(src_addr),
+                      .dst_addr(dst_addr),
+                      .mem_sel(mem_sel),
+
+                      .feature_size(feature_size),
+                      .feature_out_select(feature_out_select),
+                      .feature_in_select(feature_in_select),       //   0 :  CLP read feature from ram0          1:  CLP read feature from ram1
+                      .weight_mem_init_addr(weight_mem_init_addr),
+                      .scaler_mem_addr(scaler_mem_addr),
+                      .CLP_work_time(CLP_work_time),
+                      .current_kernel_size(current_kernel_size),
+//                      .feature_amount(),
+                      .CLP_type(CLP_type)
+                    );     
+                    
+               
+i_feature_fetch input_fetch(
+                       .clk(clk),
+                       .rst(rst),
+                       .i_data(i_data_bus_port),
+                       .fetch_addr(i_feature_addr),
+                       .read_data(i_feature_rd_en),
+
+                       .feature_fetch_enable(feature_fetch_enable),
+                       .fetch_type(fetch_type),
+                       .src_addr(src_addr),
+                       .dst_addr(dst_addr),
+                       .mem_sel(mem_sel),
+                       .feature_size(feature_size),
+                       .feature_in_select(feature_in_select),
+                       .wr_addr(feature_mem_wr_addr),
+                       .wr_data(feature_mem_wr_data),
+                       .wr_en(feature_mem_enable),
+                       .i_mem_select(mem_select) );
+
 wire f_mem_enable_0;
 wire [14:0]  f_mem_addr_0;
 wire [FEATURE_WIDTH*2 - 1 : 0]      f_mem_data_0;
@@ -131,20 +201,19 @@ wire feature_mem_read_enable_1;
 wire [8:0] feature_mem_read_addr_1;
 wire [383:0] feature_mem_read_data_1;
 
-wire                                        arm_write_feature_enable;
-wire  [14+2:0]                              arm_write_feature_addr;
-wire                                        arm_write_feature_select;
-wire  [15:0]                                arm_write_feature_data;
-
+wire                                        feature_mem_enable;
+wire  [14+2:0]                              feature_mem_wr_addr;
+wire                                        mem_select;
+wire  [15:0]                                feature_mem_wr_data;
 
 /*
 feature_load i_feature_switch(
   .clk(clk),
   .rst(rst),
-  .fetcher_to_mem(arm_write_feature_enable),
-  .wr_feature_addr(arm_write_feature_addr),
-  .wr_feature_data(arm_write_feature_data),
-  .wr_feature_sel(arm_write_feature_select),
+  .fetcher_to_mem(feature_mem_enable),
+  .wr_feature_addr(feature_mem_wr_addr),
+  .wr_feature_data(feature_mem_wr_data),
+  .wr_feature_sel(mem_select),
   .fetcher_to_mem_0(f_mem_enable_0),
   .wr_feature_addr_0(f_mem_addr_0),
   .wr_feature_data_0(f_mem_data_0),
@@ -181,65 +250,6 @@ feature_in_mem_gen feature_in_memory_1 (
             );
 */
 
-wire     [3:0]           CLP_type;
-wire     [7:0]           scaler_mem_addr;
-wire     [15:0]          weight_mem_init_addr;
-wire                     feature_in_select; 
-wire                     feature_out_select;
-wire CLP_output_flag;
-wire  [ Tm * FEATURE_WIDTH - 1 : 0 ]        CLP_output;
-wire     [15:0]          CLP_work_time;
-wire     [2:0]           current_kernel_size;
-wire     [7:0]           feature_size;
-wire  CLP_data_ready;
-
-wire feature_fetch_enable;
-wire weight_fetch_enable;
-wire instr_fetch_enable;
-wire [7:0] fetch_type;
-wire [15:0] src_addr;
-
-
-instruction_decode instruction_decode_0(
-                      .clk(clk),
-                      .rst(rst),
-                      .instruction(ctr),
-                      .instr_enable(instruction_enable),
-                      
-                      .feature_fetch_enable(feature_fetch_enable),
-                      .weight_fetch_enable(weight_fetch_enable),
-                      .instr_fetch_enable(instr_fetch_enable),
-
-                      .fetch_type(fetch_type),
-                      .src_addr(src_addr),
-
-                      .feature_size(feature_size),
-                      .feature_out_select(feature_out_select),
-                      .feature_in_select(feature_in_select),       //   0 :  CLP read feature from ram0          1:  CLP read feature from ram1
-                      .weight_mem_init_addr(weight_mem_init_addr),
-                      .scaler_mem_addr(scaler_mem_addr),
-                      .CLP_work_time(CLP_work_time),
-                      .current_kernel_size(current_kernel_size),
-//                      .feature_amount(),
-                      .CLP_type(CLP_type)
-                    );     
-                    
-               
-i_feature_fetch input_fetch(
-                       .clk(clk),
-                       .rst(rst),
-                       .i_data(i_data_bus_port),
-                       .feature_fetch_enable(feature_fetch_enable),
-                       .fetch_type(fetch_type),
-                       .src_addr(src_addr),
-                       .feature_size(feature_size),
-                       .feature_in_select(feature_in_select),
-                       .wr_addr(arm_write_feature_addr),
-                       .wr_data(arm_write_feature_data),
-                       .wr_en(arm_write_feature_enable),
-                       .i_mem_select(arm_write_feature_select) );
-                                               
-                    
 /*                 
 //wire CLP_enable;
 wire CLP_data_delay; 
