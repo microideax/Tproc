@@ -4,6 +4,7 @@ module feature_load #(
     parameter Tn = `Tn,
     parameter Tm = `Tm,
     parameter FEATURE_WIDTH = `FEATURE_WIDTH,
+    parameter DATA_BUS_WIDTH = `DATA_BUS_WIDTH,
     parameter KERNEL_SIZE = `KERNEL_SIZE,
     parameter FEATURE_IN_MEM_READ_WIDTH_COF = `FEATURE_IN_MEM_READ_WIDTH_COF
 )(
@@ -16,17 +17,18 @@ module feature_load #(
     input wire                                                                    CLP_output_flag,
     input wire   [Tm * FEATURE_WIDTH - 1 : 0]                                     CLP_output,
     */
-    input wire                                                                    fetcher_to_mem,
-    input wire   [14:0]                                                           wr_feature_addr,
-    input wire   [FEATURE_WIDTH*2 - 1 : 0]                                        wr_feature_data,
-    input wire                                                                    wr_feature_sel,
+    input wire                                                                   fetcher_to_mem,
+    input wire   [7:0]                                                           wr_feature_addr,
+    input wire   [DATA_BUS_WIDTH - 1 : 0]                                        wr_feature_data,
+    input wire                                                                   wr_feature_sel,
 
-    output  wire fetcher_to_mem_0,
-    output wire   [14:0]                                                           wr_feature_addr_0,
-    output wire   [FEATURE_WIDTH*2 - 1 : 0]                                        wr_feature_data_0,
-    output wire                                                                    fetcher_to_mem_1,
-    output wire   [14:0]                                                           wr_feature_addr_1,
-    output wire   [FEATURE_WIDTH*2 - 1 : 0]                                        wr_feature_data_1
+    output wire                                                                   fetcher_to_mem_0,
+    output wire   [7:0]                                                           wr_feature_addr_0,
+    output wire   [DATA_BUS_WIDTH - 1 : 0]                                        wr_feature_data_0,
+    
+    output wire                                                                   fetcher_to_mem_1,
+    output wire   [7:0]                                                           wr_feature_addr_1,
+    output wire   [DATA_BUS_WIDTH - 1 : 0]                                        wr_feature_data_1
 );
 
 
@@ -40,15 +42,32 @@ module feature_load #(
 // wire   [14:0]                                                           wr_feature_addr_1;
 // wire   [FEATURE_WIDTH*2 - 1 : 0]                                        wr_feature_data_1;
 
-assign fetcher_to_mem_0 = (wr_feature_sel == 0) ? fetcher_to_mem  : 0;
-assign fetcher_to_mem_1 = (wr_feature_sel == 0) ? 0                         : fetcher_to_mem;
+assign fetcher_to_mem_0 = (wr_feature_sel == 0) ? fetcher_to_mem : 0;
+assign fetcher_to_mem_1 = (wr_feature_sel == 0) ? 0 : fetcher_to_mem;
 
-assign wr_feature_addr_0   = (wr_feature_sel == 0) ? wr_feature_addr    : 0;
-assign wr_feature_addr_1   = (wr_feature_sel == 0) ? 0                         : wr_feature_addr;
+assign wr_feature_addr_0   = (wr_feature_sel == 0) ? wr_feature_addr : 0;
+assign wr_feature_addr_1   = (wr_feature_sel == 0) ? 0 : wr_feature_addr;
 
-assign wr_feature_data_0   = (wr_feature_sel == 0) ? wr_feature_data    : 0;
-assign wr_feature_data_1   = (wr_feature_sel == 0) ? 0                         : wr_feature_data;
+assign wr_feature_data_0   = (wr_feature_sel == 0) ? wr_feature_data : 0;
+assign wr_feature_data_1   = (wr_feature_sel == 0) ? 0 : wr_feature_data;
  
+/* 
+always@(posedge clk) begin
+    if(rst) begin
+        fetcher_to_mem_0 <= 0;
+        fetcher_to_mem_1 <= 0;
+        wr_feature_addr_0 <= 0;
+        wr_feature_addr_1 <= 0;
+        wr_feature_data_0 <= 0;
+        wr_feature_data_1 <= 0;
+    end else begin
+        fetcher_to_mem_0 <= (wr_feature_sel == 0) ? fetcher_to_mem : 0;
+        fetcher_to_mem_1 <= (wr_feature_sel == 0) ? 0 : fetcher_to_mem;
+        wr_feature_addr_0 <= (wr_feature_sel == 0) ? wr_feature_addr : 0;
+        wr_feature_addr_1 <= (wr_feature_sel == 0) ? 0 : wr_feature_addr;
+    end
+end
+*/
 
 /*
 always@(posedge clk)

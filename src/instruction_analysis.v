@@ -13,12 +13,15 @@ module instruction_decode(
 
        output  reg feature_fetch_enable,
        output  reg weight_fetch_enable,
+       output  reg bias_fetch_enable,
+       output  reg scaler_fetch_enable,
        output  reg instr_fetch_enable,
 
        output  reg [7:0]        fetch_type,
        output  reg [15:0]       src_addr,
        output  reg [7:0]        dst_addr,
        output  reg [7:0]        mem_sel,
+       output  reg [7:0]        fetch_counter,
 
        output  reg   [7:0]      feature_size,
        output  reg              feature_out_select,  //0: CLP write feature to ram0           1:  CLP write feature to ram1
@@ -63,14 +66,6 @@ always@(posedge clk) begin
             reg_6  <= instruction[15:8];
             reg_7  <= instruction[7:0];
         end else begin
-            // opcode <= opcode;
-            // reg_1 <= reg_1;
-            // reg_2 <= reg_2;
-            // reg_3 <= reg_3;
-            // reg_4 <= reg_4;
-            // reg_5 <= reg_5;
-            // reg_6 <= reg_6;
-            // reg_7 <= reg_7;
             opcode <= 0;
             reg_1  <= 0;
             reg_2  <= 0;
@@ -87,33 +82,50 @@ always@(posedge clk) begin
     if(rst) begin
         feature_fetch_enable <= 1'b0;
         weight_fetch_enable <= 1'b0;
+        bias_fetch_enable <= 1'b0;
+        scaler_fetch_enable <= 1'b0;
         instr_fetch_enable <= 1'b0;
         fetch_type <= 0;
         src_addr <= 0;
         dst_addr <= 0;
         mem_sel  <= 0;
+        fetch_counter <= 0;
     end else begin
         case (opcode)
             8'h01: begin
                 feature_fetch_enable <= ~reg_1[0];
                 weight_fetch_enable <= reg_1[0];
+                bias_fetch_enable <= reg_1[1];
+                scaler_fetch_enable <= reg_1[2];
             end
             8'h02: begin
                 feature_fetch_enable <= ~reg_1[0];
                 weight_fetch_enable <= reg_1[0];
+                fetch_type <= reg_1;
+                src_addr <= {reg_2, reg_3};
+                dst_addr <= reg_5;
+                mem_sel <= reg_6;
+                fetch_counter <= reg_7;
             end
             8'h04: begin
                 feature_fetch_enable <= ~reg_1[0];
                 weight_fetch_enable  <= reg_1[0];
                 fetch_type <= reg_1;
                 src_addr <= {reg_2, reg_3};
-                dst_addr <= {reg_4, reg_5};
+                dst_addr <= reg_5; // reg_4 is not used in the current stage
                 mem_sel <= reg_6;
             end
             default: begin
                 feature_fetch_enable <= 1'b0;
                 weight_fetch_enable <= 1'b0;
+                bias_fetch_enable <= 1'b0;
+                scaler_fetch_enable <= 1'b0;
                 instr_fetch_enable <= 1'b0;
+                fetch_type <= 0;
+                src_addr <= 0;
+                dst_addr <= 0;
+                mem_sel  <= 0;
+                fetch_counter <= 0;
             end
         endcase
     end

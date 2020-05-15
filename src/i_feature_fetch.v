@@ -15,10 +15,10 @@ input [7:0]  dst_addr,
 input [7:0]  mem_sel,
 
 input wire [7:0] feature_size,
-input wire feature_in_select,
+// input wire feature_in_select,
 
 output wire [14:0] wr_addr,
-output wire [15:0] wr_data,
+output wire [127:0] wr_data,
 output wire wr_en,
 output reg i_mem_select );      
 
