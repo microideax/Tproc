@@ -9,14 +9,11 @@
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
+// Description: This line buffer has two working mode:
+// line_buf_mod == 0 -> filling mode, no output, just to fill the buffer
+// useful to first line filling
+// line_buf_mod == 1 -> line buffer mode, general output with each
+// buffer line and the current input line
 //////////////////////////////////////////////////////////////////////////////////
 `include "network_para.vh"
 
