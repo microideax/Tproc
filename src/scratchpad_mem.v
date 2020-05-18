@@ -26,32 +26,28 @@ module scratchpad_mem#(
     output wire group_full
 );
 
+// reg [DATA_BUS_WIDTH - 1 : 0] data_reg;
 reg [DATA_BUS_WIDTH - 1 : 0] din_to_fifo [KERNEL_SIZE-1 : 0];
-reg wr_en_wire [KERNEL_SIZE-1 : 0];
+reg [KERNEL_SIZE-1 : 0] wr_en_line;
 
-always@(wr_mem_line) begin
-    case(wr_mem_line)
-        4'h0: begin
-            din_to_fifo[0] = i_data;
-            wr_en_wire[0] = wr_en;
+// always@(posedge clk) begin
+    // data_reg <= i_data;
+// end
+
+always@(posedge clk) begin
+    if(rst) begin
+        wr_en_line[KERNEL_SIZE - 1 : 0] <= 5'b00000;
+    end 
+    else begin
+        if(wr_en) begin
+            din_to_fifo[wr_mem_line] <= i_data;
+            wr_en_line[wr_mem_line] <= wr_en;
+        end 
+        else begin
+            // din_to_fifo[wr_mem_line] <= 0;
+            wr_en_line[KERNEL_SIZE - 1 : 0] <= 5'b00000;
         end
-        4'h1: begin
-            din_to_fifo[1] = i_data;
-            wr_en_wire[1] = wr_en;
-        end
-        4'h2: begin
-            din_to_fifo[2] = i_data;
-            wr_en_wire[2] = wr_en;
-        end
-        4'h3: begin
-            din_to_fifo[3] = i_data;
-            wr_en_wire[3] = wr_en;
-        end
-        4'h4: begin
-            din_to_fifo[4] = i_data;
-            wr_en_wire[4] = wr_en;
-        end
-    endcase
+    end
 end
 
 //assign din_to_fifo[wr_mem_line] = i_data;
@@ -59,7 +55,7 @@ end
 wire [KERNEL_SIZE * FEATURE_WIDTH-1 : 0] fifo_to_dout;
 reg rd_en_wire [KERNEL_SIZE-1:0];
 
-always@(rd_mem_line) begin
+always@(posedge clk) begin
     case(rd_mem_line)
         4'h0: begin
             rd_en_wire[0] = rd_en;
@@ -89,7 +85,7 @@ generate
         .clk(clk),
         .srst(rst),
         .din(din_to_fifo[i]), // [127:0]
-        .wr_en(wr_en_wire[i]),
+        .wr_en(wr_en_line[i]),
         .rd_en(rd_en_wire[i]),
         .dout(fifo_to_dout[i*FEATURE_WIDTH + FEATURE_WIDTH-1 : i*FEATURE_WIDTH]), // [15:0]
         .full(full_wire[i]),

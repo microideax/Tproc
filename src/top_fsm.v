@@ -53,11 +53,10 @@ always@(posedge clk)
                         begin
                             state <= state << 1;
                         end
-                    else
-                        begin
+                    else begin
                             state <= state;
                             fetch_instruction_from_ddr <= 1'b1;
-                        end
+                    end
                 end
                 6'b000010:begin // instruction mem not empty, read instruction to instrution bus 'ctr'
                     state <= state << 1;
@@ -77,7 +76,7 @@ always@(posedge clk)
                 6'b010000:begin // instruction execution stage
                     if(instr_exe_state == 1) 
                     begin
-                        state <= 6'b000000;
+                        state <= 6'b000001;
                         i_mem_addr <= i_mem_addr + 1'b1;
                     end
                     else

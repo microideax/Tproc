@@ -20,10 +20,18 @@ output reg fetch_flag
 reg [4:0] fetch_cnt;
 reg [127:0] test_instr [15:0];
 
+// testing format for input fetch
+// opcode | reg_1 | reg_2 | reg_3 | reg_4 | reg_5 | reg_6| reg_7|
+// code   | f_type| saddrh| saddrl| daddrh| daddrl|memsel| null | 
+
 integer i;
 initial begin
-  test_instr[0] = 64'h0400000000010100;
-  for (i=1;i<16;i=i+1)
+  test_instr[0] = 64'h0400000000000100;
+  test_instr[1] = 64'h0400000100010100;
+  test_instr[2] = 64'h0400000200020100;
+  test_instr[3] = 64'h0400000300030100;
+  test_instr[4] = 64'h0400000400040100;
+  for (i=5;i<16;i=i+1)
     test_instr[i] = i;
 end
 

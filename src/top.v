@@ -110,7 +110,7 @@ top_fsm CLP_fsm(
             .rst(rst), 
             .acc_enable(acc_enable),
             .i_mem_empty(i_mem_empty),
-            .instr_exe_state(feature_fetch_enable),
+            .instr_exe_state(fetch_done_wire),
             .i_mem_din(i_mem_dout),
             .i_mem_addr(i_mem_addr),
             .i_mem_rd_enable(i_mem_rd_enable), 
@@ -142,6 +142,7 @@ wire [15:0] src_addr;
 wire [7:0]  dst_addr;
 wire [7:0]  mem_sel;
 wire [7:0]  fetch_counter;
+wire fetch_done_wire;
 
 
 instruction_decode instruction_decode_0(
@@ -191,7 +192,8 @@ i_feature_fetch input_fetch(
                        .wr_addr(feature_mem_wr_addr),
                        .wr_data(feature_mem_wr_data),
                        .wr_en(feature_mem_enable),
-                       .i_mem_select(mem_select) );
+                       .i_mem_select(mem_select),
+                       .fetch_done(fetch_done_wire) );
 
 wire f_mem_enable_0;
 wire [7:0]  f_mem_addr_0;
@@ -229,6 +231,7 @@ feature_load i_feature_switch(
   .wr_feature_data_1(f_mem_data_1)
 );
 
+/*
 dp_ram#(16, 4, 128) feature_in_memory_0 (
               .clk(clk),                           // input wire clka
               .ena(f_mem_enable_0),       // input wire ena
@@ -250,7 +253,35 @@ dp_ram#(16, 4, 128) feature_in_memory_1 (
               .dia(f_mem_data_1),        // input wire [23 : 0] dina
               .dob(feature_mem_read_data_1)         // output wire [383 : 0] doutb
             );
+*/
 
+scratchpad_feature_mem #(Tn, KERNEL_SIZE, FEATURE_WIDTH, DATA_BUS_WIDTH) feature_mem_group_0(
+    .clk(clk),
+    .rst(rst),
+    .wr_en(f_mem_enable_0),
+    .rd_en(feature_mem_read_enable_0),
+    .wr_mem_group(f_mem_addr_0[7:4]),
+    .wr_mem_line(f_mem_addr_0[3:0]),
+    .rd_mem_group(),
+    .rd_mem_line(),
+
+    .i_port(f_mem_data_0),
+    .data_out(feature_mem_read_data_0)
+);
+
+scratchpad_feature_mem #(Tn, KERNEL_SIZE, FEATURE_WIDTH, DATA_BUS_WIDTH) feature_mem_group_1(
+    .clk(clk),
+    .rst(rst),
+    .wr_en(f_mem_enable_1),
+    .rd_en(feature_mem_read_enable_1),
+    .wr_mem_group(f_mem_addr_1[7:4]),
+    .wr_mem_line(f_mem_addr_1[3:0]),
+    .rd_mem_group(),
+    .rd_mem_line(),
+
+    .i_port(f_mem_data_1),
+    .data_out(feature_mem_read_data_1)
+);
 
 /*                 
 //wire CLP_enable;

@@ -17,24 +17,48 @@ input [7:0]  mem_sel,
 input wire [7:0] feature_size,
 // input wire feature_in_select,
 
-output wire [14:0] wr_addr,
+output reg [14:0] wr_addr,
 output wire [127:0] wr_data,
 output wire wr_en,
-output reg i_mem_select );      
+output reg i_mem_select,
+output reg fetch_done // this signal is used to inform the top_fsm for the accomplishment of data fetch
+);      
 
 // this module reads data from external memory to the on chip feature_in_memory  
 // testing format for input fetch
 // opcode | reg_1 | reg_2 | reg_3 | reg_4 | reg_5 | reg_6| reg_7|
 // code   | f_type| saddrh| saddrl| daddrh| daddrl|memsel| null | 
 
+reg [14:0] wr_addr_tmp;
+reg i_mem_select_tmp;
+
 always@(posedge clk) begin
     if(rst) begin
         i_mem_select <= 1'b0; 
+        wr_addr <= 0;
     end
     else begin
-        i_mem_select <= mem_sel[0];
+        i_mem_select_tmp <= mem_sel[0];
+        i_mem_select <= i_mem_select_tmp;
+        wr_addr_tmp <= dst_addr;
+        wr_addr <= wr_addr_tmp;
     end
 end
+
+/*
+always@(posedge clk) begin
+    if(rst) begin
+        fetch_done <= 1'b0;
+    end
+    else begin
+        if(wr_addr_tmp == 1) begin
+            fetch_done <= 1'b1;
+        end else begin
+            fetch_done <= 1'b0;
+        end
+    end
+end
+*/
 
 always@(posedge clk) begin
     if(rst) begin
@@ -56,11 +80,12 @@ reg feature_fetch_flag;
 reg feature_fetch_tmp;
 always@(posedge clk) begin
     feature_fetch_tmp <= feature_fetch_enable;
-    feature_fetch_flag<= feature_fetch_tmp;
+    feature_fetch_flag <= feature_fetch_tmp;
+    fetch_done <= feature_fetch_flag;
 end
 
 assign wr_data = i_data;
-assign wr_addr = dst_addr;
+// assign wr_addr = dst_addr_reg;
 assign wr_en = feature_fetch_flag;
 
 endmodule

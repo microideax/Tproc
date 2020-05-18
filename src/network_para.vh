@@ -4,7 +4,7 @@
 // Re-customize supported parameters
 `define Tm                              16
 `define Tn                              4
-`define FEATURE_WIDTH                   8
+`define FEATURE_WIDTH                   16
 `define BIAS_WIDTH                      8
 `define SCALER_WIDTH                    8
 `define KERNEL_WIDTH                    2
