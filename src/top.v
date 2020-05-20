@@ -300,27 +300,26 @@ clp_state_control clp_state_unit(
 .state(state)
 );
                     
-wire  [ Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0 ]                   feature_wire;    
 wire  [ SCALER_WIDTH - 1:0  ]                                                      scaler_wire;
 wire  [ Tn * Tm * KERNEL_SIZE * KERNEL_SIZE * KERNEL_WIDTH - 1 : 0 ]               weight_wire;
 */   
 
-featrue_mem_ctr_1 line_buf_array(
+wire  [ Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0 ]                   feature_wire;    
+
+line_buffer_array line_buf_array_instance(
            .clk(clk),
            .rst(rst),
            .current_kernel_size(current_kernel_size),
-           .state(state),
            .feature_size(feature_size),
+           .line_buffer_enable(),
+           .input_buffer_select(),
 
-            .feature_mem_read_enable_0(feature_mem_read_enable_0),
-            .feature_mem_read_enable_1(feature_mem_read_enable_1),
-            .feature_mem_read_addr_0(feature_mem_read_addr_0),
-            .feature_mem_read_data_0(feature_mem_read_data_0),
-            .feature_mem_read_addr_1(feature_mem_read_addr_1),
-            .feature_mem_read_data_1(feature_mem_read_data_1),
-          
-           .feature_in_select(feature_in_select),
-           .feature_out_select(feature_out_select),
+            .src_buffer_empty(),
+            .src_buffer_full(),
+            .initial_lines_of_feature(),
+
+            .feature_mem_read_data_0(),
+            .feature_mem_read_data_1(),
            .feature_wire(feature_wire)
     );
 /*    

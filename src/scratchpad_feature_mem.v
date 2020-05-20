@@ -17,9 +17,9 @@ module scratchpad_feature_mem#(
 
     input wire wr_en,
     input wire rd_en,
-    input wire [7:0] wr_mem_group, // select the mem group from the Tn group of memory
+    input wire [3:0] wr_mem_group, // select the mem group from the Tn group of memory
     input wire [3:0] wr_mem_line,  // select the mem line from the KERNEL_SIZE line of memory
-    input wire [7:0] rd_mem_group,
+    input wire [3:0] rd_mem_group,
     input wire [3:0] rd_mem_line,
 
     input wire [DATA_BUS_WIDTH-1: 0] i_port,
