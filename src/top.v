@@ -145,7 +145,7 @@ wire [7:0]  fetch_counter;
 wire fetch_done_wire;
 
 
-instruction_decode instruction_decode_0(
+instruction_decode instruction_decoder(
                       .clk(clk),
                       .rst(rst),
                       .instruction(ctr),
@@ -163,15 +163,19 @@ instruction_decode instruction_decode_0(
                       .mem_sel(mem_sel),
                       .fetch_counter(fetch_counter),
 
+// interface group to weight fetcher                
+                    //   .CLP_type(CLP_type),
+                    //   .weight_mem_init_addr(weight_mem_init_addr),
+                    //   .scaler_mem_addr(scaler_mem_addr),
+                    //   .CLP_work_time(CLP_work_time),
+
 // the following ports are idle for now, TODO: delete or use in the other operations
-                      .feature_size(feature_size),
-                      .feature_out_select(feature_out_select),
-                      .feature_in_select(feature_in_select),       //   0 :  CLP read feature from ram0          1:  CLP read feature from ram1
-                      .weight_mem_init_addr(weight_mem_init_addr),
-                      .scaler_mem_addr(scaler_mem_addr),
-                      .CLP_work_time(CLP_work_time),
                       .current_kernel_size(current_kernel_size),
-                      .CLP_type(CLP_type)
+                      .feature_size(feature_size),
+                      .line_buffer_enable(),
+                      .feature_in_select(feature_in_select),       //   0 :  CLP read feature from ram0          1:  CLP read feature from ram1
+                      .line_buffer_mod(),
+                      .feature_out_select(feature_out_select)
                     );     
                     
                
@@ -314,14 +318,16 @@ line_buffer_array line_buf_array_instance(
            .line_buffer_enable(),
            .input_buffer_select(),
 
-            .src_buffer_empty(),
-            .src_buffer_full(),
-            .initial_lines_of_feature(),
+            .src_buffer_empty(), // constraint signal to make sure correct execution, from feature buffer, not instr_analysis
+            .src_buffer_full(),  // constraint signal to make sure correct execution, from feature buffer, not instr_analysis
+            .line_buffer_mod(),
 
-            .feature_mem_read_data_0(),
-            .feature_mem_read_data_1(),
+            .feature_mem_read_data_0(feature_mem_read_data_0),
+            .feature_mem_read_data_1(feature_mem_read_data_1),
+            .output_valid(),
            .feature_wire(feature_wire)
     );
+    
 /*    
 weight_mem_ctr weight_mem_ctr0(
         .clk(clk),

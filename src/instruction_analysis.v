@@ -17,21 +17,28 @@ module instruction_decode(
        output  reg scaler_fetch_enable,
        output  reg instr_fetch_enable,
 
+    // interface group to feature fetcher
        output  reg [7:0]        fetch_type,
        output  reg [15:0]       src_addr,
        output  reg [7:0]        dst_addr,
        output  reg [7:0]        mem_sel,
        output  reg [7:0]        fetch_counter,
 
-       output  reg   [7:0]      feature_size,
-       output  reg              feature_out_select,  //0: CLP write feature to ram0           1:  CLP write feature to ram1
-       output  reg              feature_in_select,   //0: CLP read feature from ram0          1:  CLP read feature from ram1
-       output  reg   [15:0]     weight_mem_init_addr,
-       output  reg   [7:0]      scaler_mem_addr,
-       output  reg   [15:0]     CLP_work_time,
+    // TODO: interface group to weight fetcher
+    //    output  reg   [15:0]     weight_mem_init_addr,
+    //    output  reg   [7:0]      scaler_mem_addr,
+    //    output  reg   [15:0]     CLP_work_time,
+    //    output  reg   [3:0]      CLP_type,
+
+    // interface group to conv/dwconv/deconv
        output  reg   [2:0]      current_kernel_size,
-//       output  reg   [10:0]   feature_amount,
-       output  reg   [3:0]      CLP_type );
+       output  reg   [7:0]      feature_size,
+       output  reg              line_buffer_enable,
+       output  reg              feature_in_select,   //0: CLP read feature from ram0          1:  CLP read feature from ram1
+       output  reg              line_buffer_mod,
+
+       output  reg              feature_out_select  //0: CLP write feature to ram0           1:  CLP write feature to ram1
+       );
     
 reg [10:0] feature_amount; 
 
@@ -114,6 +121,12 @@ always@(posedge clk) begin
                 src_addr <= {reg_2, reg_3};
                 dst_addr <= reg_5; // reg_4 is not used in the current stage
                 mem_sel <= reg_6;
+            end
+            8'h81: begin
+                current_kernel_size <= ;
+                feature_size <= ;
+                line_buffer_enable <= ;
+                feature_in_select <= ; // select input buffer
             end
             default: begin
                 feature_fetch_enable <= 1'b0;

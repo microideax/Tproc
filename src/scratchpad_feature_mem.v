@@ -4,6 +4,9 @@
 // Tn --> dst_addr_h
 // Kernel_number --> dst_addr_l
 
+// The read status for the feature lines are either reading all the lines out (line_buffer_mod == 0)
+// or just reading a single line out (line_buffer_mod == 1)
+
 `include "network_para.vh"
 
 module scratchpad_feature_mem#(

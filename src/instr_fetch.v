@@ -31,6 +31,9 @@ initial begin
   test_instr[2] = 64'h0400000200020100;
   test_instr[3] = 64'h0400000300030100;
   test_instr[4] = 64'h0400000400040100;
+  test_instr[5] = 64'h8100000400040100; // instruction for conv
+  // instruction for DWconv
+  // instruction for conv1x1
   for (i=5;i<16;i=i+1)
     test_instr[i] = i;
 end

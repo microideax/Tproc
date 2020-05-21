@@ -65,10 +65,16 @@ generate
     end
 endgenerate
 
+// assign data_out[DATA_WIDTH - 1 : 0]                  = data_wire[3];
+// assign data_out[DATA_WIDTH * 2 - 1 : DATA_WIDTH]     = data_wire[2];
+// assign data_out[DATA_WIDTH * 3 - 1 : DATA_WIDTH * 2] = (current_kernel_size==5)  ?  data_wire[1]: data_in[DATA_WIDTH - 1 : 0];
+// assign data_out[DATA_WIDTH * 4 - 1 : DATA_WIDTH * 3] = (current_kernel_size==5)  ?  data_wire[0]: {DATA_WIDTH{1'd0}};
+// assign data_out[DATA_WIDTH * 5 - 1 : DATA_WIDTH * 4] = (current_kernel_size==5)  ?  data_in[DATA_WIDTH - 1 : 0] : {DATA_WIDTH{1'd0}};
+
 assign data_out[DATA_WIDTH - 1 : 0]                  = data_wire[3];
 assign data_out[DATA_WIDTH * 2 - 1 : DATA_WIDTH]     = data_wire[2];
-assign data_out[DATA_WIDTH * 3 - 1 : DATA_WIDTH * 2] = (current_kernel_size==5)  ?  data_wire[1]: data_in[DATA_WIDTH - 1 : 0];
-assign data_out[DATA_WIDTH * 4 - 1 : DATA_WIDTH * 3] = (current_kernel_size==5)  ?  data_wire[0]: {DATA_WIDTH{1'd0}};
-assign data_out[DATA_WIDTH * 5 - 1 : DATA_WIDTH * 4] = (current_kernel_size==5)  ?  data_in[DATA_WIDTH - 1 : 0] : {DATA_WIDTH{1'd0}};
+assign data_out[DATA_WIDTH * 3 - 1 : DATA_WIDTH * 2] = data_wire[1];
+assign data_out[DATA_WIDTH * 4 - 1 : DATA_WIDTH * 3] = data_wire[0];
+assign data_out[DATA_WIDTH * 5 - 1 : DATA_WIDTH * 4] = data_in[DATA_WIDTH - 1 : 0];
 
 endmodule
