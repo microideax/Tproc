@@ -1,0 +1,30 @@
+Vivado Simulator 2019.1
+Copyright 1986-1999, 2001-2019 Xilinx, Inc. All Rights Reserved.
+Running: C:/Xilinx/Vivado/2019.1/bin/unwrapped/win64.o/xelab.exe -wto dc79ed6f8f1045f4be2b20c3fb1a42e6 --incr --debug typical --relax --mt 2 -L fifo_generator_v13_2_4 -L xil_defaultlib -L unisims_ver -L unimacro_ver -L secureip -L xpm --snapshot tb_top_behav xil_defaultlib.tb_top xil_defaultlib.glbl -log elaborate.log 
+Using 2 slave threads.
+Starting static elaboration
+WARNING: [VRFC 10-3091] actual bit length 8 differs from formal bit length 15 for port 'wr_addr' [C:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/src/top.v:208]
+WARNING: [VRFC 10-3091] actual bit length 128 differs from formal bit length 320 for port 'data_out' [C:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/src/top.v:285]
+WARNING: [VRFC 10-3091] actual bit length 5 differs from formal bit length 4 for port 'wr_mem_line' [C:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/src/scratchpad_feature_mem.v:112]
+WARNING: [VRFC 10-3091] actual bit length 128 differs from formal bit length 320 for port 'data_out' [C:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/src/top.v:299]
+Completed static elaboration
+Starting simulation data flow analysis
+Completed simulation data flow analysis
+Time Resolution for simulation is 1ps
+Compiling module xil_defaultlib.instr_fetch
+Compiling module xil_defaultlib.true_dpram_sclk(RAM_DEPTH=16)
+Compiling module xil_defaultlib.syn_fifo_default
+Compiling module xil_defaultlib.top_fsm
+Compiling module xil_defaultlib.instruction_decode
+Compiling module xil_defaultlib.i_feature_fetch
+Compiling module xil_defaultlib.feature_load
+Compiling module fifo_generator_v13_2_4.fifo_generator_v13_2_4_bhv_ver_s...
+Compiling module fifo_generator_v13_2_4.fifo_generator_v13_2_4_CONV_VER(...
+Compiling module fifo_generator_v13_2_4.fifo_generator_vlog_beh(C_COMMON...
+Compiling module xil_defaultlib.asymmetric_fifo
+Compiling module xil_defaultlib.scratchpad_mem_default
+Compiling module xil_defaultlib.scratchpad_feature_mem_default
+Compiling module xil_defaultlib.top
+Compiling module xil_defaultlib.tb_top
+Compiling module xil_defaultlib.glbl
+Built simulation snapshot tb_top_behav

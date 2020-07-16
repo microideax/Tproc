@@ -1,0 +1,107 @@
+Vivado Simulator 2019.1
+Time resolution is 1 ps
+Loading test input feature to DDR....
+WARNING: Too many words specified in data file i_feature_init.mem
+Loaded test input 8x8 matrix.
+Loading test instructions to DDR....
+Loaded test instructions.
+50000000 Top state: Initial
+5 Instruction counter value: 0
+Fetching instr: time=           5, fifo_addr=  0, instr_data= 0400000000000100
+550000001 Top state: CLP fetch instruction.
+Fetching instr: time=          95, fifo_addr=  2, instr_data= 0400000100010100
+Fetching instr: time=         105, fifo_addr=  3, instr_data= 0400000200020100
+Fetching instr: time=         115, fifo_addr=  4, instr_data= 0400000300030100
+Fetching instr: time=         125, fifo_addr=  5, instr_data= 0400000400040100
+Fetching instr: time=         135, fifo_addr=  6, instr_data= 0400000001000100
+Fetching instr: time=         145, fifo_addr=  7, instr_data= 0400000101010100
+Fetching instr: time=         155, fifo_addr=  8, instr_data= 0400000201020100
+Fetching instr: time=         165, fifo_addr=  9, instr_data= 0400000301030100
+Fetching instr: time=         175, fifo_addr= 10, instr_data= 0400000401040100
+Fetching instr: time=         185, fifo_addr= 11, instr_data= 0400000002000100
+Fetching instr: time=         195, fifo_addr= 12, instr_data= 0400000102010100
+Fetching instr: time=         205, fifo_addr= 13, instr_data= 0400000202020100
+Fetching instr: time=         215, fifo_addr= 14, instr_data= 0400000302030100
+Fetching instr: time=         225, fifo_addr= 15, instr_data= 0400000402040100
+Fetching instr: time=         235, fifo_addr= 16, instr_data= 0400000003000100
+Fetching instr: time=         245, fifo_addr= 16, instr_data= 0400000000000100
+2550000010 Top state: Instr Decoder fetch instruction start.
+2650000100 Top state: Fetch instr from i_mem.
+2750001000 Top state: Instruction Decoding.
+2850010000 Top state: Instruction Executed.
+3350000010 Top state: Instr Decoder fetch instruction start.
+335 Instruction counter value: 1
+3450000100 Top state: Fetch instr from i_mem.
+3550001000 Top state: Instruction Decoding.
+3650010000 Top state: Instruction Executed.
+4150000010 Top state: Instr Decoder fetch instruction start.
+415 Instruction counter value: 2
+4250000100 Top state: Fetch instr from i_mem.
+4350001000 Top state: Instruction Decoding.
+4450010000 Top state: Instruction Executed.
+4950000010 Top state: Instr Decoder fetch instruction start.
+495 Instruction counter value: 3
+5050000100 Top state: Fetch instr from i_mem.
+5150001000 Top state: Instruction Decoding.
+5250010000 Top state: Instruction Executed.
+5750000010 Top state: Instr Decoder fetch instruction start.
+575 Instruction counter value: 4
+5850000100 Top state: Fetch instr from i_mem.
+5950001000 Top state: Instruction Decoding.
+6050010000 Top state: Instruction Executed.
+6550000010 Top state: Instr Decoder fetch instruction start.
+655 Instruction counter value: 5
+6650000100 Top state: Fetch instr from i_mem.
+6750001000 Top state: Instruction Decoding.
+6850010000 Top state: Instruction Executed.
+7350000010 Top state: Instr Decoder fetch instruction start.
+735 Instruction counter value: 6
+7450000100 Top state: Fetch instr from i_mem.
+7550001000 Top state: Instruction Decoding.
+7650010000 Top state: Instruction Executed.
+8150000010 Top state: Instr Decoder fetch instruction start.
+815 Instruction counter value: 7
+8250000100 Top state: Fetch instr from i_mem.
+8350001000 Top state: Instruction Decoding.
+8450010000 Top state: Instruction Executed.
+8950000010 Top state: Instr Decoder fetch instruction start.
+895 Instruction counter value: 8
+9050000100 Top state: Fetch instr from i_mem.
+9150001000 Top state: Instruction Decoding.
+9250010000 Top state: Instruction Executed.
+9750000010 Top state: Instr Decoder fetch instruction start.
+975 Instruction counter value: 9
+9850000100 Top state: Fetch instr from i_mem.
+9950001000 Top state: Instruction Decoding.
+10050010000 Top state: Instruction Executed.
+10550000010 Top state: Instr Decoder fetch instruction start.
+1055 Instruction counter value: 10
+10650000100 Top state: Fetch instr from i_mem.
+10750001000 Top state: Instruction Decoding.
+10850010000 Top state: Instruction Executed.
+11350000010 Top state: Instr Decoder fetch instruction start.
+1135 Instruction counter value: 11
+11450000100 Top state: Fetch instr from i_mem.
+11550001000 Top state: Instruction Decoding.
+11650010000 Top state: Instruction Executed.
+12150000010 Top state: Instr Decoder fetch instruction start.
+1215 Instruction counter value: 12
+12250000100 Top state: Fetch instr from i_mem.
+12350001000 Top state: Instruction Decoding.
+12450010000 Top state: Instruction Executed.
+12950000010 Top state: Instr Decoder fetch instruction start.
+1295 Instruction counter value: 13
+13050000100 Top state: Fetch instr from i_mem.
+13150001000 Top state: Instruction Decoding.
+13250010000 Top state: Instruction Executed.
+13750000010 Top state: Instr Decoder fetch instruction start.
+1375 Instruction counter value: 14
+13850000100 Top state: Fetch instr from i_mem.
+13950001000 Top state: Instruction Decoding.
+14050010000 Top state: Instruction Executed.
+14550000010 Top state: Instr Decoder fetch instruction start.
+1455 Instruction counter value: 15
+14650000100 Top state: Fetch instr from i_mem.
+14750001000 Top state: Instruction Decoding.
+14850010000 Top state: Instruction Executed.
+15350010000 Top state: Instruction Executed.

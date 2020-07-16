@@ -1,0 +1,12 @@
+#-----------------------------------------------------------
+# Vivado v2019.1 (64-bit)
+# SW Build 2552052 on Fri May 24 14:49:42 MDT 2019
+# IP Build 2548770 on Fri May 24 18:01:18 MDT 2019
+# Start of session at: Fri May 15 18:43:02 2020
+# Process ID: 17568
+# Current directory: C:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/Tproclocal/Tproclocal.runs/var_len_shift_ram_synth_1
+# Command line: vivado.exe -log var_len_shift_ram.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source var_len_shift_ram.tcl
+# Log file: C:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/Tproclocal/Tproclocal.runs/var_len_shift_ram_synth_1/var_len_shift_ram.vds
+# Journal file: C:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/Tproclocal/Tproclocal.runs/var_len_shift_ram_synth_1\vivado.jou
+#-----------------------------------------------------------
+source var_len_shift_ram.tcl -notrace

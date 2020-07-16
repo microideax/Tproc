@@ -14,6 +14,7 @@ module top_fsm(
 
     input               acc_enable,
     input               i_mem_empty,
+    input               i_mem_full,
     input               instr_exe_state, // this signal indicate the instruction is executed, then move to the next one
 
     input [63:0]        i_mem_din,
@@ -26,9 +27,15 @@ module top_fsm(
     output wire [63:0]   ctr
     ); 
 
+reg i_mem_full_tmp;
 reg [6:0] state;
+reg [15:0] instruction_exe_cnt;
 
 assign ctr = i_mem_din;
+
+always@(posedge clk)begin
+    i_mem_full_tmp <= i_mem_full;
+end
 
 always@(posedge clk)
     if(rst)
@@ -38,18 +45,20 @@ always@(posedge clk)
             state <= 6'b000000;
             fetch_instruction_from_ddr <= 1'b0;
             i_mem_rd_enable <= 1'b0;
+            instruction_exe_cnt <= 16'b0;
         end
     else
         begin
             case(state)
                 6'b000000:begin // Idle state
-                    if(acc_enable == 1)
+                    if(acc_enable == 1 && i_mem_empty)
                         state <= 6'b000001;
                     else 
                         state <= state;
                 end    
                 6'b000001:begin // if i_mem empty, fetch instruction from ddr, else skip
-                    if(i_mem_empty != 1)
+                    // if(i_mem_empty != 1)
+                    if(i_mem_full_tmp == 1)
                         begin
                             state <= state << 1;
                         end
@@ -74,10 +83,14 @@ always@(posedge clk)
                     // ctr <= i_mem_din;
                 end  
                 6'b010000:begin // instruction execution stage
-                    if(instr_exe_state == 1) 
-                    begin
+                    if(instr_exe_state == 1 && i_mem_empty) begin
                         state <= 6'b000001;
+                        i_mem_addr <= 0;
+                    end
+                    if(instr_exe_state == 1 && (!i_mem_empty))begin 
+                        state <= 6'b000010;
                         i_mem_addr <= i_mem_addr + 1'b1;
+                        instruction_exe_cnt <= instruction_exe_cnt + 1'b1;
                     end
                     else
                         state <= state;
@@ -85,5 +98,50 @@ always@(posedge clk)
                 default: state <= 6'b000000;
             endcase
         end
+
+// simulation annotations
+always@ (state) begin
+    case (state) 
+    6'b000000: begin
+        $display($realtime, "%b", state, " Top state: Initial");    
+    end
+    6'b000001: begin
+        $display($realtime, "%b", state, " Top state: CLP fetch instruction.");    
+    end
+    6'b000010: begin
+        $display($realtime, "%b", state, " Top state: Instr Decoder fetch instruction start.");    
+    end
+    6'b000100: begin
+        $display($realtime, "%b", state, " Top state: Fetch instr from i_mem.");    
+    end
+    6'b001000: begin
+        $display($realtime, "%b", state, " Top state: Instruction Decoding.");    
+    end
+    6'b010000: begin
+        $display($realtime, "%b", state, " Top state: Instruction Executed.");    
+    end
+    default: ;
+    endcase
+end
+/*
+always@ (i_mem_empty) begin
+    $display($realtime, " Instruction memory empty: %b", i_mem_empty, "  Fetching instructions from ext mem.");
+end
+always@ (i_mem_full) begin
+    $display($realtime, " Instruction memory full: %b", i_mem_full, "  Fetched instructions from ext mem.");
+end
+// always@ (i_mem_rd_enable) begin
+    // $display($realtime, " Instruction ready: %b", i_mem_rd_enable);
+// end
+always@ (instruction_enable) begin
+    $display($realtime, " First instruction into instr decoder.");
+end
+always@ (instr_exe_state) begin
+    $display($realtime, " Instruction executed");
+end
+*/
+always@(instruction_exe_cnt) begin
+    $display($realtime, " Instruction counter value: %0d", instruction_exe_cnt);
+end
 
 endmodule 

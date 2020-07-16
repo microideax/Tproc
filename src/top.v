@@ -45,7 +45,9 @@ module top#(
         
         // input instr_mem_enable,
 //        input [9:0] instr_mem_addr,
-        input [63:0] instr_port,
+        input   wire [63:0] instr_port,
+        output  wire [7:0]  instr_fetch_addr,
+        output  wire        instr_rd_en,
         
         input   wire                 acc_enable
         // output  wire                 CLP_state      //0 CLP idle    1 CLP busy        
@@ -65,9 +67,14 @@ wire [4:0]  i_mem_addr_in;
 instr_fetch instruction_fetcher(
 .clk(clk),
 .rst(rst),
-.i_instr(instr_port),
+
 .fetch_addr(), // todo: first address from config, then from instruction
-.fetch_enable(fetch_instruction_from_ddr),
+.fetcher_enable(fetch_instruction_from_ddr),
+
+.i_instr(instr_port),
+.i_instr_addr(instr_fetch_addr),
+.i_instr_rd_en(instr_rd_en),
+
 .o_instr(fetcher_to_imem),
 .o_instr_addr(i_mem_addr_in),
 .o_instr_enable(instr_mem_wr_enable),
@@ -97,19 +104,21 @@ syn_fifo instruction_mem(
     .wr_en(instr_mem_wr_enable),
     .data_out(i_mem_dout),
     .empty(i_mem_empty),
-    .full()
+    .full(i_mem_full)
 );
 
 wire  [3:0]state;
 
 wire instruction_enable;
 wire i_mem_empty;
+wire i_mem_full;
  
 top_fsm CLP_fsm(
             .clk(clk),
             .rst(rst), 
             .acc_enable(acc_enable),
             .i_mem_empty(i_mem_empty),
+            .i_mem_full(i_mem_full),
             .instr_exe_state(fetch_done_wire),
             .i_mem_din(i_mem_dout),
             .i_mem_addr(i_mem_addr),
@@ -123,12 +132,10 @@ top_fsm CLP_fsm(
 wire     [3:0]           CLP_type;
 wire     [7:0]           scaler_mem_addr;
 wire     [15:0]          weight_mem_init_addr;
-wire                     feature_in_select; 
 wire                     feature_out_select;
 wire CLP_output_flag;
 wire  [ Tm * FEATURE_WIDTH - 1 : 0 ]        CLP_output;
 wire     [15:0]          CLP_work_time;
-wire     [2:0]           current_kernel_size;
 wire     [7:0]           feature_size;
 wire  CLP_data_ready;
 
@@ -144,6 +151,11 @@ wire [7:0]  mem_sel;
 wire [7:0]  fetch_counter;
 wire fetch_done_wire;
 
+wire [2:0] current_kernel_size;
+wire [7:0] current_feature_size;
+wire line_buffer_enable;
+wire feature_in_select;
+wire line_buffer_mod;
 
 instruction_decode instruction_decoder(
                       .clk(clk),
@@ -171,10 +183,10 @@ instruction_decode instruction_decoder(
 
 // the following ports are idle for now, TODO: delete or use in the other operations
                       .current_kernel_size(current_kernel_size),
-                      .feature_size(feature_size),
-                      .line_buffer_enable(),
-                      .feature_in_select(feature_in_select),       //   0 :  CLP read feature from ram0          1:  CLP read feature from ram1
-                      .line_buffer_mod(),
+                      .current_feature_size(current_feature_size),
+                      .line_buffer_enable(line_buffer_enable),
+                      .feature_in_select(feature_in_select), // 0 :  CLP read feature from feature buffer 0   1:  CLP read feature from ram1
+                      .line_buffer_mod(line_buffer_mod),
                       .feature_out_select(feature_out_select)
                     );     
                     
@@ -191,7 +203,7 @@ i_feature_fetch input_fetch(
                        .src_addr(src_addr),
                        .dst_addr(dst_addr),
                        .mem_sel(mem_sel),
-                       .feature_size(feature_size),
+                       .feature_size(current_feature_size),
                     //    .feature_in_select(feature_in_select),
                        .wr_addr(feature_mem_wr_addr),
                        .wr_data(feature_mem_wr_data),
@@ -309,25 +321,25 @@ wire  [ Tn * Tm * KERNEL_SIZE * KERNEL_SIZE * KERNEL_WIDTH - 1 : 0 ]            
 */   
 
 wire  [ Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0 ]                   feature_wire;    
-
+/*
 line_buffer_array line_buf_array_instance(
            .clk(clk),
            .rst(rst),
            .current_kernel_size(current_kernel_size),
-           .feature_size(feature_size),
-           .line_buffer_enable(),
-           .input_buffer_select(),
+           .feature_size(current_feature_size),
+           .line_buffer_enable(line_buffer_enable),
+           .input_buffer_select(feature_in_select),
 
             .src_buffer_empty(), // constraint signal to make sure correct execution, from feature buffer, not instr_analysis
             .src_buffer_full(),  // constraint signal to make sure correct execution, from feature buffer, not instr_analysis
-            .line_buffer_mod(),
+            .line_buffer_mod(line_buffer_mod),
 
             .feature_mem_read_data_0(feature_mem_read_data_0),
             .feature_mem_read_data_1(feature_mem_read_data_1),
             .output_valid(),
            .feature_wire(feature_wire)
     );
-    
+*/    
 /*    
 weight_mem_ctr weight_mem_ctr0(
         .clk(clk),
@@ -344,6 +356,7 @@ scaler_ctr scaler_ctr0(
         .scaler_wire(scaler_wire)
         );
 */
+
 /*
 CLP CLP0( 
         .clk(clk),

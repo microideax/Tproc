@@ -1,0 +1,20 @@
+# compile verilog/system verilog design source files
+verilog xil_defaultlib  --include "../../../../../src" \
+"../../../../Tproclocal.srcs/sources_1/ip/asymmetric_fifo/sim/asymmetric_fifo.v" \
+"../../../../../src/custom_fifo.v" \
+"../../../../../src/feature_laod.v" \
+"../../../../../src/i_feature_fetch.v" \
+"../../../../../src/instr_fetch.v" \
+"../../../../../src/instruction_analysis.v" \
+"../../../../../src/scratchpad_feature_mem.v" \
+"../../../../../src/scratchpad_mem.v" \
+"../../../../../src/top.v" \
+"../../../../../src/top_fsm.v" \
+"../../../../../src/true_dpram_sclk.v" \
+"../../../../../sim/tb_top.v" \
+
+# compile glbl module
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort

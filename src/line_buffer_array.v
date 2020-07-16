@@ -52,17 +52,6 @@ reg [Tn * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0] feature_tmp [KERNEL_SIZE-1 : 0];
 
 genvar i,j,k,x,y,z;
   
-// always@(posedge clk)
-//     if(rst)
-//         feature_mem_read_data_tmp <= 0;
-//     else 
-//         if ((current_kernel_size != 1) && (feature_mem_read_cnt2 == 2))
-//             feature_mem_read_data_tmp <= feature_mem_read_data >> (FEATURE_WIDTH*Tn);
-//         else if ((current_kernel_size == 1) && (feature_mem_read_cnt2 == 0))
-//             feature_mem_read_data_tmp <= feature_mem_read_data >> (FEATURE_WIDTH*Tn); 
-//         else
-//             feature_mem_read_data_tmp <= feature_mem_read_data_tmp >> (FEATURE_WIDTH*Tn);
- 
 wire [Tn * KERNEL_SIZE * FEATURE_WIDTH - 1 :0] feature_transfer_wire;
 wire [KERNEL_SIZE * FEATURE_WIDTH - 1 : 0] line_buffer_in [Tn-1 : 0];
 wire [Tn * KERNEL_SIZE * FEATURE_WIDTH - 1 :0] line_buffer_out;

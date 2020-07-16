@@ -32,7 +32,7 @@ module instruction_decode(
 
     // interface group to conv/dwconv/deconv
        output  reg   [2:0]      current_kernel_size,
-       output  reg   [7:0]      feature_size,
+       output  reg   [7:0]      current_feature_size,
        output  reg              line_buffer_enable,
        output  reg              feature_in_select,   //0: CLP read feature from ram0          1:  CLP read feature from ram1
        output  reg              line_buffer_mod,
@@ -110,7 +110,7 @@ always@(posedge clk) begin
                 weight_fetch_enable <= reg_1[0];
                 fetch_type <= reg_1;
                 src_addr <= {reg_2, reg_3};
-                dst_addr <= reg_5;
+                dst_addr <= {reg_4[3:0], reg_5[3:0]};
                 mem_sel <= reg_6;
                 fetch_counter <= reg_7;
             end
@@ -119,14 +119,15 @@ always@(posedge clk) begin
                 weight_fetch_enable  <= reg_1[0];
                 fetch_type <= reg_1;
                 src_addr <= {reg_2, reg_3};
-                dst_addr <= reg_5; // reg_4 is not used in the current stage
+                dst_addr <= {reg_4[3:0], reg_5[3:0]}; // reg_4 is not used in the current stage
                 mem_sel <= reg_6;
             end
             8'h81: begin
-                current_kernel_size <= ;
-                feature_size <= ;
-                line_buffer_enable <= ;
-                feature_in_select <= ; // select input buffer
+                current_kernel_size <= reg_3;
+                current_feature_size <= reg_2;
+                line_buffer_enable <= reg_4[0];
+                feature_in_select <= reg_6[0]; // select input buffer
+                line_buffer_mod <= reg_1[0];
             end
             default: begin
                 feature_fetch_enable <= 1'b0;

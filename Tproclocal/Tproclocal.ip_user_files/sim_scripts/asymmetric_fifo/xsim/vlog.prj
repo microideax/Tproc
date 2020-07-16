@@ -1,0 +1,6 @@
+verilog xil_defaultlib  \
+"../../../../Tproclocal.srcs/sources_1/ip/asymmetric_fifo/sim/asymmetric_fifo.v" \
+
+verilog xil_defaultlib "glbl.v"
+
+nosort

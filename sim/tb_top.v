@@ -1,4 +1,4 @@
-`timescale 1ns / 1ps
+`timescale 1ns / 1ns
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
 // Engineer: 
@@ -35,15 +35,21 @@ reg ena, wea;
 reg [127:0] ram_value;
 reg [4:0] ram_addr;
 wire [127:0] i_data_port;
-wire i_data_rd_en;
 wire [15:0] i_data_addr;
+wire i_data_rd_en;
+
+wire [63:0] i_instr_port;
+wire [7:0] i_instr_addr;
+wire i_instr_rd_en;
 
 
+// instanciate test memory sapce for feature data and instruction data
+reg [127:0] test_feature_storage [32:0];
+reg [63:0] test_instruction_storage [32:0];
 
-always@(posedge clk) begin
-
-end
-
+assign i_data_port = test_feature_storage[i_data_addr];
+assign i_instr_port = test_instruction_storage[i_instr_addr];
+/*
 dp_ram #(16, 5, 128) test_feature_storage(
 .clk(clk),
 .ena(ena),
@@ -54,6 +60,8 @@ dp_ram #(16, 5, 128) test_feature_storage(
 .dia(ram_value),
 .dob(i_data_port)
 );
+*/
+
 
 top mytest(
         .clk(clk),
@@ -70,7 +78,9 @@ top mytest(
         .arm_read_feature_select(),
         
         // .instr_mem_addr(),
-        .instr_port(),
+        .instr_port(i_instr_port),
+        .instr_fetch_addr(i_instr_addr),
+        .instr_rd_en(i_instr_rd_en),
         
         .acc_enable(acc_enable)
         // .CLP_state()      //0 CLP idle    1 CLP busy
@@ -79,19 +89,29 @@ top mytest(
 integer i,j;
 initial
     begin
+        
+        $timeformat(-9, 0, " ns", 10);
+        $display("Loading test input feature to DDR....");
+        $readmemh("i_feature_init.mem", test_feature_storage);
+        $display("Loaded test input 8x8 matrix.");
+
+        $display("Loading test instructions to DDR....");
+        $readmemh("i_instr_init.mem", test_instruction_storage);
+        $display("Loaded test instructions.");
+
         clk = 0;
         rst = 1;
         acc_enable = 0;
         // load_instr_enable = 1'b0;
         ena = 1;
         wea = 1;
-        ram_value = 1;
-        ram_addr  = 0;
-        for(i=0; i<16; i=i+1) begin
-                #10
-                ram_value = ram_value + 1;
-                ram_addr  = ram_addr + 1;
-        end
+        // ram_value = 1;
+        // ram_addr  = 0;
+        // for(i=0; i<16; i=i+1) begin
+        //         #10
+        //         ram_value = ram_value + 1;
+        //         ram_addr  = ram_addr + 1;
+        // end
         ena = 0;
         wea = 0;
         #50;

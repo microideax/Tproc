@@ -40,23 +40,27 @@ wire group_full_wire [Tn-1 : 0];
 
 // reg [8:0] wr_mem_group_reg;
 reg wr_en_reg;
+
+// reg [3:0] wr_mem_group_reg;
+// always@(posedge clk)begin
+//     if(wr_en) begin
+//         wr_mem_group_reg[3:0] <= wr_mem_group[3:0];
+//     end
+// end
 always@(posedge clk) begin
     if(rst)begin
-        // i_data[wr_mem_group[3:0]]
         wr_en_group[Tn-1:0] <= 0;
     end
     else begin
         if(wr_en) begin
-            // i_port_reg <= i_port;
             i_data[wr_mem_group[3:0]] <= i_port;
             wr_en_group[wr_mem_group[3:0]] <= 1'b1;
+            // wr_en_group[wr_mem_group[3:0]] <= wr_en;
             wr_mem_line_reg <= wr_mem_line;
         end   
         else begin
-            // i_port_reg <= 0;
-            // wr_en_reg <= 0;
             i_data[wr_mem_group[3:0]] <= 0;
-            wr_en_group[wr_mem_group[3:0]] <= 0;
+            wr_en_group[Tn-1 : 0] <= 0;
             wr_mem_line_reg <= 0;
         end 
     end

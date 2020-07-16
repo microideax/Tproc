@@ -81,7 +81,7 @@ reg feature_fetch_tmp;
 always@(posedge clk) begin
     feature_fetch_tmp <= feature_fetch_enable;
     feature_fetch_flag <= feature_fetch_tmp;
-    fetch_done <= feature_fetch_flag;
+    fetch_done <= feature_fetch_flag; // TODO: improve with data ensure mechanism, make sure the feature data is access with ack signal
 end
 
 assign wr_data = i_data;

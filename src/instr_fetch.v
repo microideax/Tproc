@@ -1,4 +1,5 @@
 // dummy instruction fetch module
+// TODO: AXI interface, register variables for instruction fetching
 
 
 /* test case instructions
@@ -8,22 +9,27 @@
 module instr_fetch(
 input wire clk,
 input wire rst,
+
+input wire [15:0] fetch_addr, // initialized with constant address, runtime with instruction decoder data
+input wire fetcher_enable,
+
 input wire [63:0] i_instr,
-input [15:0] fetch_addr,
-input fetch_enable,
-output reg [63:0] o_instr,
+output reg [7:0]  i_instr_addr,
+output reg i_instr_rd_en,
+
+output wire [63:0] o_instr,
 output reg [4:0] o_instr_addr,
-output reg o_instr_enable,
+output wire o_instr_enable,
 output reg fetch_flag
 );
 
-reg [4:0] fetch_cnt;
-reg [127:0] test_instr [15:0];
+// reg [127:0] test_instr [15:0];
 
 // testing format for input fetch
 // opcode | reg_1 | reg_2 | reg_3 | reg_4 | reg_5 | reg_6| reg_7|
 // code   | f_type| saddrh| saddrl| daddrh| daddrl|memsel| null | 
 
+/*
 integer i;
 initial begin
   test_instr[0] = 64'h0400000000000100;
@@ -37,43 +43,67 @@ initial begin
   for (i=5;i<16;i=i+1)
     test_instr[i] = i;
 end
+*/
 
-always @ (posedge clk) begin
-    if (rst) begin
-        fetch_flag <= 0;
+reg fetch_status;
+reg [4:0] fetch_cnt;
+
+always@(posedge clk)begin
+    if(rst) begin
+        fetch_status <= 1'b0;
+    end 
+    else if (fetcher_enable && fetch_cnt < 15)begin
+        fetch_status <= 1'b1;
     end
     else begin
-        if(fetch_enable == 1 && fetch_cnt < 15) begin
-            fetch_flag <= 1;
-        end
-        else 
-        if (fetch_cnt == 15) begin
-            fetch_flag <= 0;
-        end
+        fetch_status <= 1'b0;
     end
 end
 
-always @ (posedge clk) begin
-    if(rst) begin
-        fetch_cnt <= 0;
+always@(posedge clk)begin
+    if(rst)begin
+        fetch_cnt <= 5'b00000;
     end
-    else begin
-        if (fetch_flag == 1) begin
-            fetch_cnt <= fetch_cnt + 1;
-        end
+    else if(fetch_status == 1'b1)begin
+        fetch_cnt <= fetch_cnt + 1'b1;
+    end else if(fetch_cnt == 15)begin
+        fetch_cnt <= 5'b00000;
     end
 end
 
 always@(posedge clk) begin
     if(rst) begin
-        o_instr_enable <= 0;
-        o_instr <= 64'b0; 
-    end 
-    else begin
-        o_instr_enable <= fetch_flag;
-        o_instr <= test_instr[fetch_cnt];
-        o_instr_addr <= fetch_cnt;
+        i_instr_rd_en <= 1'b0;
+        i_instr_addr <= 16'h0000;
+    end else begin
+        if (fetch_status) begin
+            i_instr_rd_en <= 1'b1;
+            i_instr_addr <= fetch_cnt;
+        end
+        else begin
+            i_instr_rd_en <= 1'b0;
+            i_instr_addr <= 16'h0000;
+        end
     end
 end
+
+
+
+reg instr_fetch_flag;
+reg instr_fetch_tmp;
+always@(posedge clk) begin
+    // instr_fetch_tmp <= fetcher_enable;
+    instr_fetch_flag <= i_instr_rd_en;
+end
+
+assign o_instr = i_instr;
+assign o_instr_enable = i_instr_rd_en;
+
+
+// simulation annotations
+always @ (o_instr) begin
+    $display("Fetching instr: time= %d, fifo_addr= %d, instr_data= %h", $realtime, fetch_cnt, o_instr);
+end
+
 
 endmodule

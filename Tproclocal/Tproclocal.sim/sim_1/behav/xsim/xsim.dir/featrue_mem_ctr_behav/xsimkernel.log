@@ -1,0 +1,7 @@
+Running: xsim.dir/featrue_mem_ctr_behav/xsimk.exe -simmode gui -wdb featrue_mem_ctr_behav.wdb -simrunnum 0 -socket 49700
+Design successfully loaded
+Design Loading Memory Usage: 14128 KB (Peak: 14128 KB)
+Design Loading CPU Usage: 77 ms
+Simulation completed
+Simulation Memory Usage: 16144 KB (Peak: 16144 KB)
+Simulation CPU Usage: 280 ms
