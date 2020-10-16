@@ -60,6 +60,7 @@ always@(posedge clk)
                     // if(i_mem_empty != 1)
                     if(i_mem_full_tmp == 1)
                         begin
+                            fetch_instruction_from_ddr <= 1'b0;
                             state <= state << 1;
                         end
                     else begin
@@ -87,7 +88,7 @@ always@(posedge clk)
                         state <= 6'b000001;
                         i_mem_addr <= 0;
                     end
-                    if(instr_exe_state == 1 && (!i_mem_empty))begin 
+                    else if(instr_exe_state == 1 && (!i_mem_empty))begin 
                         state <= 6'b000010;
                         i_mem_addr <= i_mem_addr + 1'b1;
                         instruction_exe_cnt <= instruction_exe_cnt + 1'b1;

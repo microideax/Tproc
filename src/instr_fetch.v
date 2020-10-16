@@ -6,15 +6,18 @@
 04 00 00 00 01 00 00 00 // fetch feature to feature_mem 1
 */
 
-module instr_fetch(
+module instr_fetch #(
+    parameter INSTR_ADDRESS_OFFSET = 0
+)(
 input wire clk,
 input wire rst,
 
 input wire [15:0] fetch_addr, // initialized with constant address, runtime with instruction decoder data
 input wire fetcher_enable,
+input wire mem_fifo_full,
 
 input wire [63:0] i_instr,
-output reg [7:0]  i_instr_addr,
+output reg [15:0]  i_instr_addr,
 output reg i_instr_rd_en,
 
 output wire [63:0] o_instr,
@@ -46,15 +49,19 @@ end
 */
 
 reg fetch_status;
-reg [4:0] fetch_cnt;
+reg [15:0] fetch_cnt;
 
 always@(posedge clk)begin
     if(rst) begin
         fetch_status <= 1'b0;
     end 
-    else if (fetcher_enable && fetch_cnt < 15)begin
+    // else if (fetcher_enable && fetch_cnt <= 4'b1111) begin
+    else if (fetcher_enable && ~mem_fifo_full) begin        
         fetch_status <= 1'b1;
     end
+    // else if (fetch_cnt == 4'b1110) begin
+    //    fetch_status <= 1'b0; 
+    // end
     else begin
         fetch_status <= 1'b0;
     end
@@ -62,27 +69,31 @@ end
 
 always@(posedge clk)begin
     if(rst)begin
-        fetch_cnt <= 5'b00000;
+        fetch_cnt <= 16'h0000;
     end
-    else if(fetch_status == 1'b1)begin
+    // else if(fetch_status == 1'b1)begin
+    else if(o_instr_enable) begin
         fetch_cnt <= fetch_cnt + 1'b1;
-    end else if(fetch_cnt == 15)begin
-        fetch_cnt <= 5'b00000;
+    // end else if(fetch_status == 1'b0)begin
+        // fetch_cnt <= 4'b00000;
+    end
+    else begin
+        fetch_cnt <= fetch_cnt;
     end
 end
 
 always@(posedge clk) begin
     if(rst) begin
         i_instr_rd_en <= 1'b0;
-        i_instr_addr <= 16'h0000;
+        i_instr_addr <= 16'h0000 + INSTR_ADDRESS_OFFSET;
     end else begin
         if (fetch_status) begin
             i_instr_rd_en <= 1'b1;
-            i_instr_addr <= fetch_cnt;
+            i_instr_addr <= fetch_cnt + INSTR_ADDRESS_OFFSET;
         end
         else begin
             i_instr_rd_en <= 1'b0;
-            i_instr_addr <= 16'h0000;
+            i_instr_addr <= 16'h0000 + INSTR_ADDRESS_OFFSET;
         end
     end
 end
@@ -97,7 +108,7 @@ always@(posedge clk) begin
 end
 
 assign o_instr = i_instr;
-assign o_instr_enable = i_instr_rd_en;
+assign o_instr_enable = i_instr_rd_en & ~mem_fifo_full;
 
 
 // simulation annotations

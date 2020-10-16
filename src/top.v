@@ -46,7 +46,7 @@ module top#(
         // input instr_mem_enable,
 //        input [9:0] instr_mem_addr,
         input   wire [63:0] instr_port,
-        output  wire [7:0]  instr_fetch_addr,
+        output  wire [15:0]  instr_fetch_addr,
         output  wire        instr_rd_en,
         
         input   wire                 acc_enable
@@ -70,6 +70,7 @@ instr_fetch instruction_fetcher(
 
 .fetch_addr(), // todo: first address from config, then from instruction
 .fetcher_enable(fetch_instruction_from_ddr),
+.mem_fifo_full(i_mem_full),
 
 .i_instr(instr_port),
 .i_instr_addr(instr_fetch_addr),
