@@ -33,9 +33,15 @@ reg acc_enable;
 reg ena, wea;
 reg [127:0] ram_value;
 reg [4:0] ram_addr;
+
 wire [127:0] i_data_port;
 wire [15:0] i_data_addr;
 wire i_data_rd_en;
+
+wire [63:0] i_weight_port;
+wire [15:0] i_weight_addr;
+wire i_weight_rd_en;
+
 
 wire [63:0] i_instr_port;
 wire [7:0] i_instr_addr;
@@ -43,23 +49,13 @@ wire i_instr_rd_en;
 
 
 // instanciate test memory sapce for feature data and instruction data
-reg [127:0] test_feature_storage [32:0];
-reg [63:0] test_instruction_storage [32:0];
+reg [127:0] test_feature_storage [31:0];
+reg [63:0]  test_weight_storage [31:0];
+reg [63:0] test_instruction_storage [31:0];
 
 assign i_data_port = test_feature_storage[i_data_addr];
+assign i_weight_port = test_weight_storage[i_weight_addr];
 assign i_instr_port = test_instruction_storage[i_instr_addr];
-/*
-dp_ram #(16, 5, 128) test_feature_storage(
-.clk(clk),
-.ena(ena),
-.enb(i_data_rd_en),
-.wea(wea),
-.addra(ram_addr),
-.addrb(i_data_addr[4:0]),
-.dia(ram_value),
-.dob(i_data_port)
-);
-*/
 
 
 top mytest(
@@ -70,6 +66,10 @@ top mytest(
         .i_data_bus_port(i_data_port),
         .i_feature_addr(i_data_addr),
         .i_feature_rd_en(i_data_rd_en),
+
+        .i_w_bus_port(i_weight_port),
+        .i_w_addr(i_weight_addr),
+        .i_w_enable(i_w_enable),
         
         .arm_read_feature_enable(),
         .arm_read_feature_addr(),
@@ -90,9 +90,13 @@ initial
     begin
         
         $timeformat(-9, 0, " ns", 10);
+        
         $display("Loading test input feature to DDR....");
         $readmemh("i_feature_init.mem", test_feature_storage);
         $display("Loaded test input 8x8 matrix.");
+
+        $display("Loading test weight data to DDR....");
+        $readmemh("i_weight_init.mem", test_weight_storage);
 
         $display("Loading test instructions to DDR....");
         $readmemh("i_instr_init.mem", test_instruction_storage);

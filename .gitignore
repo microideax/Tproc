@@ -87,3 +87,7 @@ testip_cnt/tmp_edit_project.cache/wt/webtalk_pa.xml
 testip_cnt/tmp_edit_project.cache/wt/project.wpc
 testip_cnt/tmp_edit_project.cache/wt/java_command_handlers.wdf
 testip_cnt/tmp_edit_project.cache/wt/gui_handlers.wdf
+*.wdf
+*.jou
+*.log
+*.jou

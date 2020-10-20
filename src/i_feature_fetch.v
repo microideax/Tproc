@@ -91,35 +91,70 @@ assign wr_en = feature_fetch_flag;
 endmodule
 
 
-module i_weight_fetch(
+module i_weight_fetch #(
+    parameter WEIGHT_BUFFER_DEPTH = 16,
+    parameter WEIGHT_ADDR_OFFSET = 0
+)(
     input wire clk,
     input wire rst,
-    input wire [127:0] i_w_data,
 
-    input wire weight_fetch_enable,
-    input wire [7:0] fetch_type,
-    input wire [15:0] src_addr, // this will be defined by the parser, 
-                                  // which is the relative address of the weight data
+    // instruction interface group
+    input weight_fetch_enable,
+    input [7:0] fetch_type,
+    input [15:0] src_addr, // this will be defined by the parser, 
+                                // which is the relative address of the weight data
+    input [7:0]  dst_addr, // select destination buffer, optional for now
 
-    output reg [14:0] wr_addr,
-    output reg [127:0] wr_data,
-    output reg wr_en                                  
+    // weight data input from DDR interface group
+    input wire [63:0] w_data,
+    output reg [31:0] rd_addr,
+    output reg rd_en,
+
+    // weight data output to on-chip buffer group
+    output reg [7:0] wr_addr,
+    output wire [63:0] wr_data,
+    output wire wr_en,
+
+    output reg fetch_done  // execution ACK
 );
 
-reg start_reg;
+reg [7:0] wr_addr_tmp;
+
 always@(posedge clk) begin
     if(rst) begin
-        start_reg <= 1'b0; 
+        wr_addr <= 8'h00;
     end
     else begin
-        if (weight_fetch_enable) 
-        begin
-            start_reg <= 1'b1;
+        wr_addr_tmp <= dst_addr;
+        wr_addr <= wr_addr_tmp;
+    end
+end
+
+always@(posedge clk) begin
+    if(rst) begin
+        rd_en <= 1'b0;
+        rd_addr <= 16'h0000;
+    end else begin
+        if (weight_fetch_enable) begin
+            rd_en <= 1'b1;
+            rd_addr <= src_addr + WEIGHT_ADDR_OFFSET;
         end
         else begin
-            start_reg <= 1'b0;
+            rd_en <= 1'b0;
+            rd_addr <= 16'h0000;
         end
     end
 end
+
+reg weight_fetch_flag;
+reg weight_fetch_tmp;
+always@(posedge clk) begin
+    weight_fetch_tmp <= weight_fetch_enable;
+    weight_fetch_flag <= weight_fetch_tmp;
+    fetch_done <= weight_fetch_flag; // TODO: improve with data ensure mechanism, make sure the feature data is access with ack signal
+end
+
+assign wr_data = w_data;
+assign wr_en = weight_fetch_flag;
 
 endmodule

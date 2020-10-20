@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: ADSC
-// Engineer: Yao Chen, Kai Zhang
+// Company: ADSC_DSC
+// Engineer: Yao Chen
 // 
 // Create Date: 07/28/2018 10:45:54 PM
 // Design Name: t-dla-instr-acc
@@ -37,6 +37,10 @@ module top#(
         input   wire  [127 : 0]      i_data_bus_port,
         output  wire  [15:0]         i_feature_addr,
         output  wire                 i_feature_rd_en,
+
+        input   wire  [63:0]         i_w_bus_port,
+        output  wire  [15:0]         i_w_addr,
+        output  wire                 i_w_enable,
          
         input   wire                 arm_read_feature_enable,
         input   wire  [15+2:0]       arm_read_feature_addr,
@@ -341,7 +345,41 @@ line_buffer_array line_buf_array_instance(
            .feature_wire(feature_wire)
     );
 */    
-/*    
+
+wire w_wr_en;
+wire [15:0] w_wr_addr;
+wire [63:0] w_wr_data;
+
+i_weight_fetch weight_fetcher(
+    .clk(clk),
+    .rst(rst),
+
+    .weight_fetch_enable(weight_fetch_enable),
+    .fetch_type(fetch_type),
+    .src_addr(src_addr),
+    .dst_addr(dst_addr),
+    .w_data(i_w_bus_port),
+    .rd_addr(i_w_addr),
+    .rd_en(i_w_enable),
+    .wr_addr(w_wr_addr),
+    .wr_data(w_wr_data),
+    .wr_en(w_wr_en),
+    .fetch_done()
+);
+
+weight_buffer_array #(16, 4, 64, 3) weight_buffer(
+    .clk(clk),
+    .ena(w_wr_en),
+    .enb(),
+    .wea(w_wr_en),
+    .addra(w_wr_addr),
+    .addrb(),
+    .dia(w_wr_data),
+    .weight_buffer_out(weight_wire)
+);
+
+
+/*
 weight_mem_ctr weight_mem_ctr0(
         .clk(clk),
         .rst(rst),
@@ -349,6 +387,9 @@ weight_mem_ctr weight_mem_ctr0(
         .weight_mem_init_addr(weight_mem_init_addr),
         .weight_wire(weight_wire)
     );
+*/
+
+/*
 scaler_ctr scaler_ctr0(
         .clk(clk),
         .rst(rst),
