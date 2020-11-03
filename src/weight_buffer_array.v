@@ -7,7 +7,7 @@
 module weight_buffer_array #(
     parameter RAM_DEPTH = `Tm,
     parameter ADDR_WIDTH = $clog2(RAM_DEPTH),
-    parameter DATA_WIDTH = 64,
+    parameter DATA_WIDTH = 64, // effective weight = Kernel_size*Kernel_size*2-bit < 5*5*2
     parameter ADDR_EXT = $clog2(`Tn)+1
 ) (
 input clk, 
@@ -28,7 +28,13 @@ output wire [`Tn*DATA_WIDTH-1:0] weight_buffer_out
 wire [`Tn*DATA_WIDTH-1:0] weight_out;
 wire [`Tn-1:0] ram_select;
 
-assign ram_select = `Tn'b0000_0001 << addra[ADDR_WIDTH+1:ADDR_WIDTH];
+// assign ram_select = {7'b000_0000,1} << (addra[ADDR_WIDTH+1:ADDR_WIDTH] + 1);
+// assign ram_select[addra[ADDR_WIDTH+1:ADDR_WIDTH]] = 1'b1 & wea;
+
+sel_decoder ram_sel(
+    .sel(addra[ADDR_WIDTH+1: ADDR_WIDTH]),
+    .res(ram_select)
+);
 
 genvar i;
 generate
@@ -37,7 +43,7 @@ generate
             .clk(clk),
             .ena(ram_select[i]),
             .enb(enb),
-            .wea(ram_select[i]),
+            .wea(ram_select[i] & wea),
             .addra(addra[ADDR_WIDTH -1 : 0]),
             .addrb(addrb),
             .dia(dia),
@@ -49,3 +55,20 @@ endgenerate
 assign weight_buffer_out = weight_out;
 
 endmodule 
+
+module sel_decoder(
+    input wire [1:0] sel,
+    output reg [3:0] res
+);
+
+always @(sel)  
+    begin  
+        case (sel)  
+        2'b00 : res = 4'b0001;  
+        2'b01 : res = 4'b0010;  
+        2'b10 : res = 4'b0100;  
+        2'b11 : res = 4'b1000;  
+        default : res = 4'b0000;  
+    endcase  
+  end 
+endmodule

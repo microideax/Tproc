@@ -53,28 +53,53 @@ end
 //assign din_to_fifo[wr_mem_line] = i_data;
 
 wire [KERNEL_SIZE * FEATURE_WIDTH-1 : 0] fifo_to_dout;
-reg rd_en_wire [KERNEL_SIZE-1:0];
+wire [KERNEL_SIZE-1:0] rd_en_wire;
 
+assign rd_en_wire = rd_en ? ~0 : 0;
+/*
 always@(posedge clk) begin
-    case(rd_mem_line)
-        4'h0: begin
-            rd_en_wire[0] = rd_en;
-        end
-        4'h1: begin
-            rd_en_wire[1] = rd_en;
-        end
-        4'h2: begin
-            rd_en_wire[2] = rd_en;
-        end
-        4'h3: begin
-            rd_en_wire[3] = rd_en;
-        end
-        4'h4: begin
-            rd_en_wire[4] = rd_en;
-        end
-    endcase
+    if (rst) begin
+        rd_en_wire <= 0;
+    end
+    else begin
+        case(rd_mem_line)
+            4'h0: begin
+                rd_en_wire[0] = rd_en;
+            end
+            4'h1: begin
+                rd_en_wire[1] = rd_en;
+            end
+            4'h2: begin
+                rd_en_wire[2] = rd_en;
+            end
+            4'h3: begin
+                rd_en_wire[3] = rd_en;
+            end
+            4'h4: begin
+                rd_en_wire[4] = rd_en;
+            end
+            default: begin
+                rd_en_wire[KERNEL_SIZE - 1 : 0] = ~0;
+            end
+        endcase
+    end
 end
-
+*/
+/*
+always@(posedge clk) begin
+    if(rst) begin
+        rd_en_wire <= 0;
+    end
+    else begin
+        if(rd_en) begin
+            rd_en_wire <= ~0;
+        end
+        else begin
+            rd_en_wire <= 0;
+        end
+    end
+end
+*/
 wire [KERNEL_SIZE-1 : 0] full_wire;
 wire [KERNEL_SIZE-1 : 0] empty_wire;
 

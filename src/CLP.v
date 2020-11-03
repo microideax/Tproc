@@ -28,25 +28,25 @@ module CLP#(
     output  wire  [ Tm * FEATURE_WIDTH - 1 : 0 ]                                    feature_out
     );
 
-wire        [ FEATURE_WIDTH - 1 : 0 ]                                                   feature_in_wire[Tn * KERNEL_SIZE * KERNEL_SIZE - 1:0];
-wire        [ KERNEL_WIDTH - 1 : 0 ]                                                    weight_in_wire[Tn * Tm * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   select_out_wire[Tn * Tm * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   adder_tree_DSP_1[Tn * (Tm/2) * 12 - 1 : 0];
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   adder_tree_DSP_2[Tn * (Tm/2) * 6 - 1 : 0];
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   adder_tree_DSP_3[Tn * (Tm/2) * 4 - 1 : 0];
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   adder_tree_DSP_4[Tn * (Tm/2) * 2 - 1 : 0];
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   adder_tree_DSP_5[Tn * (Tm/2) - 1 : 0];
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   adder_tree_DSP_6[(Tm/2) * Tn / 2 - 1 : 0];
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   adder_tree_DSP_7[(Tm/2) - 1 : 0]; 
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   adder_tree_DSP_out[Tm - 1 : 0];                                           
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   scaler_out[Tm - 1 : 0];
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   bias_out[Tm - 1 : 0];
-wire                                                                                    pooling_enable;
-reg                                                                                     pooling_enable_p;
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   compare_tree_wire[Tm * COMPARE_TREE_CELL - 1 : 0];
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   function_in[Tm - 1 : 0];
-wire signed [ FEATURE_WIDTH - 1 : 0 ]                                                   function_out[Tm - 1 : 0]; 
-reg  signed [ FEATURE_WIDTH - 1 : 0 ]                                                   accumulate_out[Tm - 1 : 0]; 
+wire        [ FEATURE_WIDTH - 1 : 0 ] feature_in_wire[Tn * KERNEL_SIZE * KERNEL_SIZE - 1:0];
+wire        [ KERNEL_WIDTH - 1 : 0 ]  weight_in_wire[Tn * Tm * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
+wire signed [ FEATURE_WIDTH - 1 : 0 ] select_out_wire[Tn * Tm * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
+wire signed [ FEATURE_WIDTH - 1 : 0 ] adder_tree_DSP_1[Tn * (Tm/2) * 12 - 1 : 0];
+wire signed [ FEATURE_WIDTH - 1 : 0 ] adder_tree_DSP_2[Tn * (Tm/2) * 6 - 1 : 0];
+wire signed [ FEATURE_WIDTH - 1 : 0 ] adder_tree_DSP_3[Tn * (Tm/2) * 4 - 1 : 0];
+wire signed [ FEATURE_WIDTH - 1 : 0 ] adder_tree_DSP_4[Tn * (Tm/2) * 2 - 1 : 0];
+wire signed [ FEATURE_WIDTH - 1 : 0 ] adder_tree_DSP_5[Tn * (Tm/2) - 1 : 0];
+wire signed [ FEATURE_WIDTH - 1 : 0 ] adder_tree_DSP_6[(Tm/2) * Tn / 2 - 1 : 0];
+wire signed [ FEATURE_WIDTH - 1 : 0 ] adder_tree_DSP_7[(Tm/2) - 1 : 0]; 
+wire signed [ FEATURE_WIDTH - 1 : 0 ] adder_tree_DSP_out[Tm - 1 : 0];                                           
+wire signed [ FEATURE_WIDTH - 1 : 0 ] scaler_out[Tm - 1 : 0];
+wire signed [ FEATURE_WIDTH - 1 : 0 ] bias_out[Tm - 1 : 0];
+wire pooling_enable;
+reg  pooling_enable_p;
+wire signed [ FEATURE_WIDTH - 1 : 0 ] compare_tree_wire[Tm * COMPARE_TREE_CELL - 1 : 0];
+wire signed [ FEATURE_WIDTH - 1 : 0 ] function_in[Tm - 1 : 0];
+wire signed [ FEATURE_WIDTH - 1 : 0 ] function_out[Tm - 1 : 0]; 
+reg  signed [ FEATURE_WIDTH - 1 : 0 ] accumulate_out[Tm - 1 : 0]; 
 
 genvar i,j,k,x,y,z;
 

@@ -98,9 +98,11 @@ always@(posedge clk) begin
     end
 end */
 
+/*
 always@(rd_mem_group) begin
     rd_en_wire[rd_mem_group] = rd_en;
 end
+*/
 
 genvar i;
 generate 
@@ -113,7 +115,7 @@ generate
             .rd_mem_line(rd_mem_line),
             .i_data(i_data[i]),
             .wr_en(wr_en_group[i]),
-            .rd_en(rd_en_wire[i]),
+            .rd_en(rd_en),
             .data_out(data_out[i*FEATURE_WIDTH*KERNEL_SIZE + FEATURE_WIDTH*KERNEL_SIZE -1: i*FEATURE_WIDTH*KERNEL_SIZE]),
             .group_empty(group_empty_wire[i]),
             .group_full(group_full_wire[i])

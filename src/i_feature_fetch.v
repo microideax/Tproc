@@ -112,7 +112,7 @@ module i_weight_fetch #(
 
     // weight data output to on-chip buffer group
     output reg [7:0] wr_addr,
-    output wire [63:0] wr_data,
+    output reg [63:0] wr_data,
     output wire wr_en,
 
     output reg fetch_done  // execution ACK
@@ -154,7 +154,16 @@ always@(posedge clk) begin
     fetch_done <= weight_fetch_flag; // TODO: improve with data ensure mechanism, make sure the feature data is access with ack signal
 end
 
-assign wr_data = w_data;
+// assign wr_data = w_data;
+always@(posedge clk) begin
+    if(rst)begin
+        wr_data <= 64'h0;
+    end
+    else begin
+        wr_data <= w_data;
+    end
+end
+
 assign wr_en = weight_fetch_flag;
 
 endmodule

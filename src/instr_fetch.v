@@ -15,10 +15,11 @@ input wire rst,
 input wire [15:0] fetch_addr, // initialized with constant address, runtime with instruction decoder data
 input wire fetcher_enable,
 input wire mem_fifo_full,
+input wire mem_fifo_empty,
 
 input wire [63:0] i_instr,
-output reg [15:0]  i_instr_addr,
-output reg i_instr_rd_en,
+output wire [15:0]  i_instr_addr,
+output wire i_instr_rd_en,
 
 output wire [63:0] o_instr,
 output reg [4:0] o_instr_addr,
@@ -50,6 +51,9 @@ end
 
 reg fetch_status;
 reg [15:0] fetch_cnt;
+reg [15:0] internal_cnt;
+
+assign i_instr_rd_en = fetch_status;
 
 always@(posedge clk)begin
     if(rst) begin
@@ -57,7 +61,12 @@ always@(posedge clk)begin
     end 
     // else if (fetcher_enable && fetch_cnt <= 4'b1111) begin
     else if (fetcher_enable && ~mem_fifo_full) begin        
-        fetch_status <= 1'b1;
+        if (internal_cnt < 16'h000f) begin
+            fetch_status <= 1'b1;
+        end
+        else begin
+            fetch_status <= 1'b0;
+        end
     end
     // else if (fetch_cnt == 4'b1110) begin
     //    fetch_status <= 1'b0; 
@@ -70,34 +79,43 @@ end
 always@(posedge clk)begin
     if(rst)begin
         fetch_cnt <= 16'h0000;
+        internal_cnt <= 16'h0000;
     end
-    // else if(fetch_status == 1'b1)begin
-    else if(o_instr_enable) begin
+    else if(fetch_status & ~mem_fifo_full) begin
         fetch_cnt <= fetch_cnt + 1'b1;
-    // end else if(fetch_status == 1'b0)begin
-        // fetch_cnt <= 4'b00000;
+        internal_cnt <= internal_cnt + 1'b1;
+    end
+    // else if(fetch_status & ~mem_fifo_full) begin
+        // internal_cnt <= internal_cnt + 1'b1;
+    // end
+    else if(mem_fifo_empty)begin
+            internal_cnt <= 4'b00000;
     end
     else begin
         fetch_cnt <= fetch_cnt;
+        internal_cnt <= internal_cnt;
     end
 end
 
+assign i_instr_addr = fetch_cnt;
+
+/*
 always@(posedge clk) begin
     if(rst) begin
         i_instr_rd_en <= 1'b0;
-        i_instr_addr <= 16'h0000 + INSTR_ADDRESS_OFFSET;
+        // i_instr_addr <= 16'h0000 + INSTR_ADDRESS_OFFSET;
     end else begin
         if (fetch_status) begin
             i_instr_rd_en <= 1'b1;
-            i_instr_addr <= fetch_cnt + INSTR_ADDRESS_OFFSET;
+            // i_instr_addr <= fetch_cnt + INSTR_ADDRESS_OFFSET;
         end
         else begin
             i_instr_rd_en <= 1'b0;
-            i_instr_addr <= 16'h0000 + INSTR_ADDRESS_OFFSET;
+            // i_instr_addr <= 16'h0000 + INSTR_ADDRESS_OFFSET;
         end
     end
 end
-
+*/
 
 
 reg instr_fetch_flag;
@@ -108,7 +126,7 @@ always@(posedge clk) begin
 end
 
 assign o_instr = i_instr;
-assign o_instr_enable = i_instr_rd_en & ~mem_fifo_full;
+assign o_instr_enable = i_instr_rd_en;
 
 
 // simulation annotations

@@ -16,6 +16,9 @@ module instruction_decode(
        output  reg bias_fetch_enable,
        output  reg scaler_fetch_enable,
        output  reg instr_fetch_enable,
+       output  reg reg_enable,
+       output  reg vreg_input_select,
+       output  reg test_exe_done,       
 
     // interface group to feature fetcher
        output  reg [7:0]        fetch_type,
@@ -97,6 +100,9 @@ always@(posedge clk) begin
         dst_addr <= 0;
         mem_sel  <= 0;
         fetch_counter <= 0;
+        reg_enable <= 0;
+        test_exe_done <= 0;
+        vreg_input_select <=0;
     end else begin
         case (opcode)
             8'h01: begin
@@ -129,6 +135,17 @@ always@(posedge clk) begin
                 feature_in_select <= reg_6[0]; // select input buffer
                 line_buffer_mod <= reg_1[0];
             end
+            8'h40: begin
+                reg_enable <= reg_1[0];
+                vreg_input_select <= reg_2[0];
+            end
+            8'h82: begin
+                $display("Null instruction!!!");
+                test_exe_done <= 1'b1;
+            end
+            8'h44: begin
+                $display("System hold for verification!!!");
+            end
             default: begin
                 feature_fetch_enable <= 1'b0;
                 weight_fetch_enable <= 1'b0;
@@ -140,6 +157,9 @@ always@(posedge clk) begin
                 dst_addr <= 0;
                 mem_sel  <= 0;
                 fetch_counter <= 0;
+                reg_enable <= 0;
+                test_exe_done <= 0;
+                vreg_input_select <= 0;
             end
         endcase
     end

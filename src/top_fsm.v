@@ -12,12 +12,12 @@ module top_fsm(
     input clk,
     input rst,
 
-    input               acc_enable,
-    input               i_mem_empty,
-    input               i_mem_full,
-    input               instr_exe_state, // this signal indicate the instruction is executed, then move to the next one
+    input  wire         acc_enable,
+    input  wire         i_mem_empty,
+    input  wire         i_mem_full,
+    input  wire         instr_exe_state, // this signal indicate the instruction is executed, then move to the next one
 
-    input [63:0]        i_mem_din,
+    input wire [63:0]        i_mem_din,
     
     output reg [9:0]    i_mem_addr,
     output reg          i_mem_rd_enable,

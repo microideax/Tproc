@@ -53,6 +53,10 @@ reg [127:0] test_feature_storage [31:0];
 reg [63:0]  test_weight_storage [31:0];
 reg [63:0] test_instruction_storage [31:0];
 
+// reg [ Tn * Tm * KERNEL_SIZE * KERNEL_SIZE * KERNEL_WIDTH - 1 : 0 ]  weight_wire;
+// reg [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_reg_to_select_array;
+// reg [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] ternary_com_out;
+
 assign i_data_port = test_feature_storage[i_data_addr];
 assign i_weight_port = test_weight_storage[i_weight_addr];
 assign i_instr_port = test_instruction_storage[i_instr_addr];
@@ -83,6 +87,9 @@ top mytest(
         
         .acc_enable(acc_enable)
         // .CLP_state()      //0 CLP idle    1 CLP busy
+        // .weight_wire(weight_wire),
+        // .virtical_reg_to_select_array(virtical_reg_to_select_array),
+        // .ternary_com_out(ternary_com_out)
         );
 
 integer i,j;
