@@ -260,3 +260,30 @@ generate
 endgenerate
 
 endmodule
+
+
+module scaler_multiply_unit #(
+    parameter FEATURE_WIDTH = `FEATURE_WIDTH,
+    parameter SCALER_WIDTH = 16
+) (
+    input wire clk,
+    input wire rst,
+    input wire enable,
+    input wire [FEATURE_WIDTH-1 : 0] data_in,
+    input wire [SCALER_WIDTH-1 : 0] scaler_in,
+    output reg [FEATURE_WIDTH+SCALER_WIDTH-1 : 0] data_o
+);
+
+always@(posedge clk) begin
+    if(rst) begin
+        data_o <= 0;
+    end
+    else if(enable) begin
+        data_o <= data_in * scaler_in;
+    end
+    else begin
+        data_o <= 0;
+    end
+end
+
+endmodule
