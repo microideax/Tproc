@@ -442,38 +442,43 @@ adder_tree_tn channel_adder_tree(
     .out(feature_temp)
 );
 
-i_weight_fetch #(.WEIGHT_BUFFER_DEPTH(16), 0) i_scaler_fetch(
-    .clk(),
-    .rst(),
+
+wire [15:0] s_wr_addr;
+wire [SCALER_WIDTH-1 : 0] s_wr_data;
+wire s_wr_en;
+i_weight_fetch #(16, 0) i_scaler_fetch(
+    .clk(clk),
+    .rst(rst),
     .weight_fetch_enable(scaler_fetch_enable),
-    .fetch_type(),
-    .src_addr(),
-    .dst_addr(),
-    .w_data(),
-    .rd_data(),
-    .rd_en(),
-    .wr_addr(),
-    .wr_data(),
-    .wr_en(),
-    .fetch_done()
+    .fetch_type(fetch_type),
+    .src_addr(src_addr),
+    .dst_addr(dst_addr),
+    .w_data(i_w_bus_port),
+    .rd_addr(i_w_addr),
+    .rd_en(i_w_enable),
+    .wr_addr(s_wr_addr),
+    .wr_data(s_wr_data),
+    .wr_en(s_wr_en),
+    .fetch_done(fetch_done_from_s)
 );
+
 
 wire [SCALER_WIDTH-1 : 0] scaler_data;
 syn_fifo #(16, 4, 16) scaler_buffer(
     .clk(clk),
     .rst(rst),
-    .wr_cs(),
-    .rd_cs(),
-    .data_in(),
-    .rd_en(),
-    .wr_en(),
+    .wr_cs(s_wr_en),
+    .rd_cs(shift_done_from_virreg),
+    .data_in(s_wr_data),
+    .rd_en(shift_done_from_virreg),
+    .wr_en(s_wr_en),
     .data_out(scaler_data),
     .empty(),
     .full()
 );
 
 wire [FEATURE_WIDTH-1 : 0] scaled_feature;
-scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) scaler_unit (
+scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) feature_scaling_unit (
     .clk(clk),
     .rst(rst),
     .enable(1'b1),

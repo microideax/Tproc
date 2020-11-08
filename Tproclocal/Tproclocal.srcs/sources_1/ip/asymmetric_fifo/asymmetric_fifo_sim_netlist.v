@@ -1,10 +1,10 @@
 // Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
-// Tool Version: Vivado v.2019.1 (win64) Build 2552052 Fri May 24 14:49:42 MDT 2019
-// Date        : Sat May 16 14:37:51 2020
-// Host        : User2-ADSC running 64-bit major release  (build 9200)
+// Tool Version: Vivado v.2019.2 (lin64) Build 2708876 Wed Nov  6 21:39:14 MST 2019
+// Date        : Sat Nov  7 18:06:06 2020
+// Host        : M4HM87P-00-ADSC running 64-bit Ubuntu 16.04.7 LTS
 // Command     : write_verilog -force -mode funcsim
-//               c:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/Tproclocal/Tproclocal.srcs/sources_1/ip/asymmetric_fifo/asymmetric_fifo_sim_netlist.v
+//               /home/gigabyte/workspace/Tproc_local/Tproc/Tproclocal/Tproclocal.srcs/sources_1/ip/asymmetric_fifo/asymmetric_fifo_sim_netlist.v
 // Design      : asymmetric_fifo
 // Purpose     : This verilog netlist is a functional simulation representation of the design and should not be modified
 //               or synthesized. This netlist cannot be used for SDF annotated simulation.
@@ -12,7 +12,7 @@
 // --------------------------------------------------------------------------------
 `timescale 1 ps / 1 ps
 
-(* CHECK_LICENSE_TYPE = "asymmetric_fifo,fifo_generator_v13_2_4,{}" *) (* downgradeipidentifiedwarnings = "yes" *) (* x_core_info = "fifo_generator_v13_2_4,Vivado 2019.1" *) 
+(* CHECK_LICENSE_TYPE = "asymmetric_fifo,fifo_generator_v13_2_5,{}" *) (* downgradeipidentifiedwarnings = "yes" *) (* x_core_info = "fifo_generator_v13_2_5,Vivado 2019.2" *) 
 (* NotValidForBitStream *)
 module asymmetric_fifo
    (clk,
@@ -366,7 +366,7 @@ module asymmetric_fifo
   (* C_WR_PNTR_WIDTH_WDCH = "10" *) 
   (* C_WR_PNTR_WIDTH_WRCH = "4" *) 
   (* C_WR_RESPONSE_LATENCY = "1" *) 
-  asymmetric_fifo_fifo_generator_v13_2_4 U0
+  asymmetric_fifo_fifo_generator_v13_2_5 U0
        (.almost_empty(NLW_U0_almost_empty_UNCONNECTED),
         .almost_full(NLW_U0_almost_full_UNCONNECTED),
         .axi_ar_data_count(NLW_U0_axi_ar_data_count_UNCONNECTED[4:0]),
@@ -1267,8 +1267,8 @@ module asymmetric_fifo_blk_mem_gen_top
         .tmp_ram_rd_en(tmp_ram_rd_en));
 endmodule
 
-(* ORIG_REF_NAME = "blk_mem_gen_v8_4_3" *) 
-module asymmetric_fifo_blk_mem_gen_v8_4_3
+(* ORIG_REF_NAME = "blk_mem_gen_v8_4_4" *) 
+module asymmetric_fifo_blk_mem_gen_v8_4_4
    (dout,
     clk,
     tmp_ram_rd_en,
@@ -1295,7 +1295,7 @@ module asymmetric_fifo_blk_mem_gen_v8_4_3
   wire srst;
   wire tmp_ram_rd_en;
 
-  asymmetric_fifo_blk_mem_gen_v8_4_3_synth inst_blk_mem_gen
+  asymmetric_fifo_blk_mem_gen_v8_4_4_synth inst_blk_mem_gen
        (.\DEVICE_7SERIES.NO_BMM_INFO.SDP.WIDE_PRIM36_NO_ECC.ram (\DEVICE_7SERIES.NO_BMM_INFO.SDP.WIDE_PRIM36_NO_ECC.ram ),
         .E(E),
         .Q(Q),
@@ -1306,8 +1306,8 @@ module asymmetric_fifo_blk_mem_gen_v8_4_3
         .tmp_ram_rd_en(tmp_ram_rd_en));
 endmodule
 
-(* ORIG_REF_NAME = "blk_mem_gen_v8_4_3_synth" *) 
-module asymmetric_fifo_blk_mem_gen_v8_4_3_synth
+(* ORIG_REF_NAME = "blk_mem_gen_v8_4_4_synth" *) 
+module asymmetric_fifo_blk_mem_gen_v8_4_4_synth
    (dout,
     clk,
     tmp_ram_rd_en,
@@ -1370,42 +1370,42 @@ module asymmetric_fifo_fifo_generator_ramfifo
   wire empty;
   wire full;
   wire \gntv_or_sync_fifo.gl0.wr_n_0 ;
-  wire [6:0]p_0_out;
-  wire [3:0]p_11_out;
-  wire [3:0]p_12_out;
-  wire p_17_out;
   wire ram_full_comb;
+  wire ram_wr_en;
   wire rd_en;
+  wire [6:0]rd_pntr;
   wire srst;
   wire tmp_ram_rd_en;
   wire wr_en;
+  wire [3:0]wr_pntr;
+  wire [3:0]wr_pntr_plus1;
 
   asymmetric_fifo_rd_logic \gntv_or_sync_fifo.gl0.rd 
-       (.Q(p_0_out),
+       (.Q(rd_pntr),
         .clk(clk),
         .empty(empty),
         .out(\gntv_or_sync_fifo.gl0.wr_n_0 ),
-        .ram_empty_fb_i_i_3(p_11_out),
+        .ram_empty_fb_i_i_3(wr_pntr),
         .ram_full_comb(ram_full_comb),
-        .ram_full_fb_i_i_2(p_12_out),
+        .ram_full_fb_i_i_2(wr_pntr_plus1),
         .rd_en(rd_en),
         .srst(srst),
         .tmp_ram_rd_en(tmp_ram_rd_en),
         .wr_en(wr_en));
   asymmetric_fifo_wr_logic \gntv_or_sync_fifo.gl0.wr 
-       (.E(p_17_out),
-        .Q(p_12_out),
+       (.E(ram_wr_en),
+        .Q(wr_pntr_plus1),
         .clk(clk),
         .full(full),
-        .\gcc0.gc0.count_d1_reg[3] (p_11_out),
+        .\gcc0.gc0.count_d1_reg[3] (wr_pntr),
         .out(\gntv_or_sync_fifo.gl0.wr_n_0 ),
         .ram_full_comb(ram_full_comb),
         .srst(srst),
         .wr_en(wr_en));
   asymmetric_fifo_memory \gntv_or_sync_fifo.mem 
-       (.\DEVICE_7SERIES.NO_BMM_INFO.SDP.WIDE_PRIM36_NO_ECC.ram (p_11_out),
-        .E(p_17_out),
-        .Q(p_0_out),
+       (.\DEVICE_7SERIES.NO_BMM_INFO.SDP.WIDE_PRIM36_NO_ECC.ram (wr_pntr),
+        .E(ram_wr_en),
+        .Q(rd_pntr),
         .clk(clk),
         .din(din),
         .dout(dout),
@@ -1519,8 +1519,8 @@ endmodule
 (* C_WR_DEPTH_WRCH = "16" *) (* C_WR_FREQ = "1" *) (* C_WR_PNTR_WIDTH = "4" *) 
 (* C_WR_PNTR_WIDTH_AXIS = "10" *) (* C_WR_PNTR_WIDTH_RACH = "4" *) (* C_WR_PNTR_WIDTH_RDCH = "10" *) 
 (* C_WR_PNTR_WIDTH_WACH = "4" *) (* C_WR_PNTR_WIDTH_WDCH = "10" *) (* C_WR_PNTR_WIDTH_WRCH = "4" *) 
-(* C_WR_RESPONSE_LATENCY = "1" *) (* ORIG_REF_NAME = "fifo_generator_v13_2_4" *) 
-module asymmetric_fifo_fifo_generator_v13_2_4
+(* C_WR_RESPONSE_LATENCY = "1" *) (* ORIG_REF_NAME = "fifo_generator_v13_2_5" *) 
+module asymmetric_fifo_fifo_generator_v13_2_5
    (backup,
     backup_marker,
     clk,
@@ -2511,7 +2511,7 @@ module asymmetric_fifo_fifo_generator_v13_2_4
        (.G(\<const0> ));
   VCC VCC
        (.P(\<const1> ));
-  asymmetric_fifo_fifo_generator_v13_2_4_synth inst_fifo_gen
+  asymmetric_fifo_fifo_generator_v13_2_5_synth inst_fifo_gen
        (.clk(clk),
         .din(din),
         .dout(dout),
@@ -2522,8 +2522,8 @@ module asymmetric_fifo_fifo_generator_v13_2_4
         .wr_en(wr_en));
 endmodule
 
-(* ORIG_REF_NAME = "fifo_generator_v13_2_4_synth" *) 
-module asymmetric_fifo_fifo_generator_v13_2_4_synth
+(* ORIG_REF_NAME = "fifo_generator_v13_2_5_synth" *) 
+module asymmetric_fifo_fifo_generator_v13_2_5_synth
    (dout,
     empty,
     full,
@@ -2589,7 +2589,7 @@ module asymmetric_fifo_memory
   wire srst;
   wire tmp_ram_rd_en;
 
-  asymmetric_fifo_blk_mem_gen_v8_4_3 \gbm.gbmg.gbmga.ngecc.bmg 
+  asymmetric_fifo_blk_mem_gen_v8_4_4 \gbm.gbmg.gbmga.ngecc.bmg 
        (.\DEVICE_7SERIES.NO_BMM_INFO.SDP.WIDE_PRIM36_NO_ECC.ram (\DEVICE_7SERIES.NO_BMM_INFO.SDP.WIDE_PRIM36_NO_ECC.ram ),
         .E(E),
         .Q(Q),
@@ -2961,34 +2961,34 @@ module asymmetric_fifo_rd_logic
   wire [6:0]Q;
   wire clk;
   wire empty;
+  wire empty_fb_i;
   wire out;
-  wire p_2_out;
-  wire p_7_out;
   wire [3:0]ram_empty_fb_i_i_3;
   wire ram_empty_i0__3;
   wire ram_full_comb;
   wire [3:0]ram_full_fb_i_i_2;
+  wire ram_rd_en;
   wire rd_en;
   wire srst;
   wire tmp_ram_rd_en;
   wire wr_en;
 
   asymmetric_fifo_rd_status_flags_ss \grss.rsts 
-       (.E(p_7_out),
+       (.E(ram_rd_en),
         .clk(clk),
         .empty(empty),
-        .out(p_2_out),
+        .out(empty_fb_i),
         .ram_empty_i0__3(ram_empty_i0__3),
         .rd_en(rd_en),
         .srst(srst),
         .tmp_ram_rd_en(tmp_ram_rd_en));
   asymmetric_fifo_rd_bin_cntr rpntr
-       (.E(p_7_out),
+       (.E(ram_rd_en),
         .Q(Q),
         .clk(clk),
         .out(out),
         .ram_empty_fb_i_i_3_0(ram_empty_fb_i_i_3),
-        .ram_empty_fb_i_reg(p_2_out),
+        .ram_empty_fb_i_reg(empty_fb_i),
         .ram_empty_i0__3(ram_empty_i0__3),
         .ram_full_comb(ram_full_comb),
         .ram_full_fb_i_i_2_0(ram_full_fb_i_i_2),
@@ -3062,6 +3062,19 @@ module asymmetric_fifo_rd_status_flags_ss
         .D(ram_empty_i0__3),
         .Q(ram_empty_i),
         .S(srst));
+endmodule
+
+(* ORIG_REF_NAME = "reset_blk_ramfifo" *) 
+module asymmetric_fifo_reset_blk_ramfifo
+   ();
+
+  (* async_reg = "true" *) (* msgon = "true" *) wire rst_wr_reg2;
+
+  LUT1 #(
+    .INIT(2'h2)) 
+    rstblki_0
+       (.I0(1'b0),
+        .O(rst_wr_reg2));
 endmodule
 
 (* ORIG_REF_NAME = "wr_bin_cntr" *) 
