@@ -1,12 +1,22 @@
-Vivado Simulator 2019.1
+Vivado Simulator 2019.2
 Copyright 1986-1999, 2001-2019 Xilinx, Inc. All Rights Reserved.
-Running: C:/Xilinx/Vivado/2019.1/bin/unwrapped/win64.o/xelab.exe -wto dc79ed6f8f1045f4be2b20c3fb1a42e6 --incr --debug typical --relax --mt 2 -L fifo_generator_v13_2_4 -L xil_defaultlib -L unisims_ver -L unimacro_ver -L secureip -L xpm --snapshot tb_top_behav xil_defaultlib.tb_top xil_defaultlib.glbl -log elaborate.log 
-Using 2 slave threads.
+Running: /tools/Xilinx/Vivado/2019.2/bin/unwrapped/lnx64.o/xelab -wto dc79ed6f8f1045f4be2b20c3fb1a42e6 --incr --debug typical --relax --mt 8 -L fifo_generator_v13_2_5 -L xil_defaultlib -L unisims_ver -L unimacro_ver -L secureip -L xpm --snapshot tb_top_behav xil_defaultlib.tb_top xil_defaultlib.glbl -log elaborate.log 
+Using 8 slave threads.
 Starting static elaboration
-WARNING: [VRFC 10-3091] actual bit length 8 differs from formal bit length 15 for port 'wr_addr' [C:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/src/top.v:208]
-WARNING: [VRFC 10-3091] actual bit length 128 differs from formal bit length 320 for port 'data_out' [C:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/src/top.v:285]
-WARNING: [VRFC 10-3091] actual bit length 5 differs from formal bit length 4 for port 'wr_mem_line' [C:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/src/scratchpad_feature_mem.v:112]
-WARNING: [VRFC 10-3091] actual bit length 128 differs from formal bit length 320 for port 'data_out' [C:/Users/User2/Desktop/VivadoProjects/TDLA-i7server/Tproc/src/top.v:299]
+Pass Through NonSizing Optimizer
+WARNING: [VRFC 10-3091] actual bit length 8 differs from formal bit length 16 for port 'instr_fetch_addr' [/home/gigabyte/workspace/Tproc_local/Tproc/sim/tb_top.v:85]
+WARNING: [VRFC 10-3091] actual bit length 8 differs from formal bit length 15 for port 'wr_addr' [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:225]
+WARNING: [VRFC 10-3091] actual bit length 5 differs from formal bit length 4 for port 'wr_mem_line' [/home/gigabyte/workspace/Tproc_local/Tproc/src/scratchpad_feature_mem.v:114]
+WARNING: [VRFC 10-3091] actual bit length 16 differs from formal bit length 32 for port 'rd_addr' [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:376]
+WARNING: [VRFC 10-3091] actual bit length 16 differs from formal bit length 8 for port 'wr_addr' [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:378]
+WARNING: [VRFC 10-3091] actual bit length 16 differs from formal bit length 7 for port 'addra' [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:412]
+WARNING: [VRFC 10-3091] actual bit length 16 differs from formal bit length 4 for port 'addrb' [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:413]
+WARNING: [VRFC 10-3091] actual bit length 200 differs from formal bit length 256 for port 'weight_buffer_out' [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:415]
+WARNING: [VRFC 10-3091] actual bit length 128 differs from formal bit length 64 for port 'B_INPUT' [/home/gigabyte/workspace/Tproc_local/Tproc/src/arithmetic_unit_general.v:192]
+WARNING: [VRFC 10-3091] actual bit length 128 differs from formal bit length 64 for port 'O_OUTPUT' [/home/gigabyte/workspace/Tproc_local/Tproc/src/arithmetic_unit_general.v:193]
+WARNING: [VRFC 10-3091] actual bit length 16 differs from formal bit length 32 for port 'rd_addr' [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:458]
+WARNING: [VRFC 10-3091] actual bit length 16 differs from formal bit length 8 for port 'wr_addr' [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:460]
+WARNING: [VRFC 10-3091] actual bit length 24 differs from formal bit length 32 for port 'data_o' [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:490]
 Completed static elaboration
 Starting simulation data flow analysis
 Completed simulation data flow analysis
@@ -18,12 +28,28 @@ Compiling module xil_defaultlib.top_fsm
 Compiling module xil_defaultlib.instruction_decode
 Compiling module xil_defaultlib.i_feature_fetch
 Compiling module xil_defaultlib.feature_load
-Compiling module fifo_generator_v13_2_4.fifo_generator_v13_2_4_bhv_ver_s...
-Compiling module fifo_generator_v13_2_4.fifo_generator_v13_2_4_CONV_VER(...
-Compiling module fifo_generator_v13_2_4.fifo_generator_vlog_beh(C_COMMON...
+Compiling module fifo_generator_v13_2_5.fifo_generator_v13_2_5_bhv_ver_s...
+Compiling module fifo_generator_v13_2_5.fifo_generator_v13_2_5_CONV_VER(...
+Compiling module fifo_generator_v13_2_5.fifo_generator_vlog_beh(C_COMMON...
 Compiling module xil_defaultlib.asymmetric_fifo
 Compiling module xil_defaultlib.scratchpad_mem_default
 Compiling module xil_defaultlib.scratchpad_feature_mem_default
+Compiling module xil_defaultlib.i_weight_fetch
+Compiling module xil_defaultlib.virtical_reg
+Compiling module xil_defaultlib.sel_decoder
+Compiling module xil_defaultlib.dp_ram(ADDR_WIDTH=4)
+Compiling module xil_defaultlib.weight_buffer_array(ADDR_WIDTH=4...
+Compiling module xil_defaultlib.TnKK_select_array_default
+Compiling module xil_defaultlib.adderx4
+Compiling module xil_defaultlib.adder_2Nin_Nout_default
+Compiling module xil_defaultlib.register_x1
+Compiling module xil_defaultlib.adder_2Nin_Nout(CHANNEL_NUM=8)
+Compiling module xil_defaultlib.adder_2Nin_Nout(CHANNEL_NUM=4)
+Compiling module xil_defaultlib.adder_4in_1out
+Compiling module xil_defaultlib.adder_tree_single_kernel_default
+Compiling module xil_defaultlib.adder_tree_Tn_kernel_default
+Compiling module xil_defaultlib.adder_tree_tn_default
+Compiling module xil_defaultlib.scaler_multiply_unit
 Compiling module xil_defaultlib.top
 Compiling module xil_defaultlib.tb_top
 Compiling module xil_defaultlib.glbl

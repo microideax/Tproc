@@ -114,6 +114,7 @@ always@(posedge clk) begin
             8'h02: begin
                 feature_fetch_enable <= ~reg_1[0];
                 weight_fetch_enable <= reg_1[0];
+                scaler_fetch_enable <= reg_1[2];
                 fetch_type <= reg_1;
                 src_addr <= {reg_2, reg_3};
                 dst_addr <= {reg_4[3:0], reg_5[3:0]};
@@ -123,6 +124,7 @@ always@(posedge clk) begin
             8'h04: begin
                 feature_fetch_enable <= ~reg_1[0];
                 weight_fetch_enable  <= reg_1[0];
+                scaler_fetch_enable <= reg_1[2];
                 fetch_type <= reg_1;
                 src_addr <= {reg_2, reg_3};
                 dst_addr <= {reg_4[3:0], reg_5[3:0]}; // reg_4 is not used in the current stage

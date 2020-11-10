@@ -1,6 +1,11 @@
-*.cache/*
+*cache/*
 *.hw/*
 *.ip_user_files/*
+*.sdb
+*.pb
+*.log
+Tproclocal/Tproclocal.cache/*
+Tproclocal/Tproclocal.sim/*
 Tproclocal/Tproclocal.xpr
 Tproclocal/Tproclocal.sim/sim_1/behav/xsim/xvlog.pb
 Tproclocal/Tproclocal.sim/sim_1/behav/xsim/xvlog.log

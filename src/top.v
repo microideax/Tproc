@@ -41,11 +41,6 @@ module top#(
         input   wire  [63:0]         i_w_bus_port,
         output  wire  [15:0]         i_w_addr,
         output  wire                 i_w_enable,
-         
-        input   wire                 arm_read_feature_enable,
-        input   wire  [15+2:0]       arm_read_feature_addr,
-        output  wire  [FEATURE_WIDTH*2 - 1 : 0]             arm_read_feature_data,
-        input   wire                 arm_read_feature_select,
         
         // input instr_mem_enable,
 //        input [9:0] instr_mem_addr,
@@ -365,12 +360,15 @@ line_buffer_array line_buf_array_instance(
 wire w_wr_en;
 wire [15:0] w_wr_addr;
 wire [63:0] w_wr_data;
+wire wr_cs_weight;
+wire wr_cs_scaler;
 
 i_weight_fetch weight_fetcher(
     .clk(clk),
     .rst(rst),
 
     .weight_fetch_enable(weight_fetch_enable),
+    .scaler_fetch_enable(scaler_fetch_enable),
     .fetch_type(fetch_type),
     .src_addr(src_addr),
     .dst_addr(dst_addr),
@@ -380,6 +378,8 @@ i_weight_fetch weight_fetcher(
     .wr_addr(w_wr_addr),
     .wr_data(w_wr_data),
     .wr_en(w_wr_en),
+    .wr_cs_weight(wr_cs_weight),
+    .wr_cs_scaler(wr_cs_scaler),
     .fetch_done(fetch_done_from_w)
 );
 
@@ -406,7 +406,7 @@ virtical_reg i_virtical_reg(
 wire [Tn*KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH-1 : 0] weight_wire;
 weight_buffer_array #(16, 4, 64, 3) weight_buffer(
     .clk(clk),
-    .ena(w_wr_en),
+    .ena(wr_cs_weight),
     .enb(1'b1),
     .wea(w_wr_en),
     .addra(w_wr_addr),
@@ -444,7 +444,8 @@ adder_tree_tn channel_adder_tree(
 
 
 wire [15:0] s_wr_addr;
-wire [SCALER_WIDTH-1 : 0] s_wr_data;
+// wire [SCALER_WIDTH-1 : 0] 
+wire [63:0] s_wr_data;
 wire s_wr_en;
 i_weight_fetch #(16, 0) i_scaler_fetch(
     .clk(clk),
@@ -463,30 +464,32 @@ i_weight_fetch #(16, 0) i_scaler_fetch(
 );
 
 
-wire [SCALER_WIDTH-1 : 0] scaler_data;
-syn_fifo #(16, 4, 16) scaler_buffer(
+// wire [SCALER_WIDTH-1 : 0] scaler_data;
+wire [63:0] scaler_data;
+syn_fifo scaler_buffer(
     .clk(clk),
     .rst(rst),
-    .wr_cs(s_wr_en),
+    .wr_cs(wr_cs_scaler),
     .rd_cs(shift_done_from_virreg),
-    .data_in(s_wr_data),
+    .data_in(w_wr_data),
     .rd_en(shift_done_from_virreg),
-    .wr_en(s_wr_en),
+    .wr_en(w_wr_en),
     .data_out(scaler_data),
     .empty(),
     .full()
 );
 
-wire [FEATURE_WIDTH-1 : 0] scaled_feature;
+
+wire [FEATURE_WIDTH + SCALER_WIDTH-1 : 0] scaled_feature;
 scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) feature_scaling_unit (
     .clk(clk),
     .rst(rst),
     .enable(1'b1),
     .data_in(feature_temp),
-    .scaler_in(scaler_data),
+    .scaler_in(scaler_data[15 : 0]),
     .data_o(scaled_feature)
 );
-
+/*
 o_feature_reg #(.Tm(Tm), .FEATURE_WIDTH(FEATURE_WIDTH)) o_feature_buffer(
     .clk(clk),
     .rst(rst),
@@ -495,7 +498,7 @@ o_feature_reg #(.Tm(Tm), .FEATURE_WIDTH(FEATURE_WIDTH)) o_feature_buffer(
     .rd_feature_out(),
     .rd_feature_enable()
 );
-
+*/
 
 /*
 scaler_ctr scaler_ctr0(

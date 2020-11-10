@@ -51,7 +51,7 @@ end
 
 reg fetch_status;
 reg [15:0] fetch_cnt;
-reg [15:0] internal_cnt;
+reg [4:0] internal_cnt;
 
 assign i_instr_rd_en = fetch_status;
 
@@ -61,7 +61,7 @@ always@(posedge clk)begin
     end 
     // else if (fetcher_enable && fetch_cnt <= 4'b1111) begin
     else if (fetcher_enable && ~mem_fifo_full) begin        
-        if (internal_cnt < 16'h000f) begin
+        if (internal_cnt < 5'h0f) begin
             fetch_status <= 1'b1;
         end
         else begin
@@ -78,24 +78,37 @@ end
 
 always@(posedge clk)begin
     if(rst)begin
-        fetch_cnt <= 16'h0000;
-        internal_cnt <= 16'h0000;
+        // fetch_cnt <= 16'h0000;
+        internal_cnt <= 5'h00;
     end
-    else if(fetch_status & ~mem_fifo_full) begin
-        fetch_cnt <= fetch_cnt + 1'b1;
+    else if(fetch_status & internal_cnt < 5'h0f) begin
         internal_cnt <= internal_cnt + 1'b1;
+        // fetch_cnt <= fetch_cnt + 1'b1;
     end
-    // else if(fetch_status & ~mem_fifo_full) begin
-        // internal_cnt <= internal_cnt + 1'b1;
-    // end
     else if(mem_fifo_empty)begin
-            internal_cnt <= 4'b00000;
+        internal_cnt <= 5'b00;
     end
     else begin
-        fetch_cnt <= fetch_cnt;
+        // fetch_cnt <= fetch_cnt;
         internal_cnt <= internal_cnt;
     end
 end
+
+always@(posedge clk)begin
+    if(rst) begin
+        fetch_cnt <= 16'h0000;
+    end
+    else if(fetch_status) begin
+        fetch_cnt <= fetch_cnt + 1'b1;
+    end
+    // else if(instr_fetch_flag) begin
+        // fetch_cnt <= fetch_cnt + 1'b1;
+    // end
+    else begin
+        fetch_cnt <= fetch_cnt;
+    end
+end
+
 
 assign i_instr_addr = fetch_cnt;
 

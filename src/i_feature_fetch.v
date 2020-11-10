@@ -100,6 +100,7 @@ module i_weight_fetch #(
 
     // instruction interface group
     input weight_fetch_enable,
+    input scaler_fetch_enable,
     input [7:0] fetch_type,
     input [15:0] src_addr, // this will be defined by the parser, 
                                 // which is the relative address of the weight data
@@ -114,6 +115,8 @@ module i_weight_fetch #(
     output reg [7:0] wr_addr,
     output reg [63:0] wr_data,
     output wire wr_en,
+    output wire wr_cs_weight,
+    output wire wr_cs_scaler,
 
     output reg fetch_done  // execution ACK
 );
@@ -135,7 +138,7 @@ always@(posedge clk) begin
         rd_en <= 1'b0;
         rd_addr <= 16'h0000;
     end else begin
-        if (weight_fetch_enable) begin
+        if (weight_fetch_enable | scaler_fetch_enable) begin
             rd_en <= 1'b1;
             rd_addr <= src_addr + WEIGHT_ADDR_OFFSET;
         end
@@ -148,10 +151,15 @@ end
 
 reg weight_fetch_flag;
 reg weight_fetch_tmp;
+reg scaler_fetch_flag;
+reg scaler_fetch_tmp;
+
 always@(posedge clk) begin
     weight_fetch_tmp <= weight_fetch_enable;
     weight_fetch_flag <= weight_fetch_tmp;
     fetch_done <= weight_fetch_flag; // TODO: improve with data ensure mechanism, make sure the feature data is access with ack signal
+    scaler_fetch_tmp <= scaler_fetch_enable;
+    scaler_fetch_flag <= scaler_fetch_tmp;    
 end
 
 // assign wr_data = w_data;
@@ -164,6 +172,8 @@ always@(posedge clk) begin
     end
 end
 
-assign wr_en = weight_fetch_flag;
+assign wr_en = weight_fetch_flag | scaler_fetch_flag;
+assign wr_cs_scaler = scaler_fetch_flag;
+assign wr_cs_weight = weight_fetch_flag;
 
 endmodule

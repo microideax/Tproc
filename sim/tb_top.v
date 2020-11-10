@@ -50,8 +50,8 @@ wire i_instr_rd_en;
 
 // instanciate test memory sapce for feature data and instruction data
 reg [127:0] test_feature_storage [31:0];
-reg [63:0]  test_weight_storage [31:0];
-reg [63:0] test_instruction_storage [31:0];
+reg [63:0]  test_weight_storage [63:0];
+reg [63:0] test_instruction_storage [63:0];
 
 // reg [ Tn * Tm * KERNEL_SIZE * KERNEL_SIZE * KERNEL_WIDTH - 1 : 0 ]  weight_wire;
 // reg [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_reg_to_select_array;
@@ -73,12 +73,12 @@ top mytest(
 
         .i_w_bus_port(i_weight_port),
         .i_w_addr(i_weight_addr),
-        .i_w_enable(i_w_enable),
+        .i_w_enable(i_weight_rd_en),
         
-        .arm_read_feature_enable(),
-        .arm_read_feature_addr(),
-        .arm_read_feature_data(),
-        .arm_read_feature_select(),
+        // .arm_read_feature_enable(),
+        // .arm_read_feature_addr(),
+        // .arm_read_feature_data(),
+        // .arm_read_feature_select(),
         
         // .instr_mem_addr(),
         .instr_port(i_instr_port),
