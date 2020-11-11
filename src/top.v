@@ -47,14 +47,9 @@ module top#(
         input   wire [63:0] instr_port,
         output  wire [15:0]  instr_fetch_addr,
         output  wire        instr_rd_en,
-        
-        input   wire                 acc_enable
-        // output  wire                 CLP_state      //0 CLP idle    1 CLP busy        
 
-        // testing output ports
-        // output wire [Tn * KERNEL_SIZE * KERNEL_SIZE * KERNEL_WIDTH - 1 : 0]  weight_wire,
-        // output wire [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_reg_to_select_array
-        // output wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] ternary_com_out 
+        output wire [FEATURE_WIDTH + SCALER_WIDTH-1 : 0] scaled_feature,
+        input   wire                 acc_enable
         );
 
 
@@ -160,6 +155,7 @@ wire fetch_done_wire;
 wire fetch_done_from_i;
 wire fetch_done_from_w;
 wire shift_done_from_virreg;
+
 assign fetch_done_wire = fetch_done_from_i | fetch_done_from_w | shift_done_from_virreg | test_exe_done;
 
 wire [2:0] current_kernel_size;
@@ -288,6 +284,8 @@ dp_ram#(16, 4, 128) feature_in_memory_1 (
             );
 */
 
+wire virreg_to_fmem_0, virreg_to_fmem_1;
+
 scratchpad_feature_mem #(Tn, KERNEL_SIZE, FEATURE_WIDTH, DATA_BUS_WIDTH) feature_mem_group_0(
     .clk(clk),
     .rst(rst),
@@ -315,26 +313,6 @@ scratchpad_feature_mem #(Tn, KERNEL_SIZE, FEATURE_WIDTH, DATA_BUS_WIDTH) feature
     .i_port(f_mem_data_1),
     .data_out(feature_mem_read_data_1)
 );
-
-/*                 
-//wire CLP_enable;
-wire CLP_data_delay; 
-
-clp_state_control clp_state_unit(
-.clk(clk),
-.rst(rst),
-.enable(acc_enable),
-.current_kernel_size(current_kernel_size),
-//.CLP_ctr_cnt(CLP_ctr_cnt),
-.CLP_work_time(CLP_work_time),
-.feature_size(feature_size),
-.CLP_enable(CLP_enable),
-.CLP_data_ready(CLP_data_ready),
-.state(state)
-);
-                    
-wire  [ SCALER_WIDTH - 1:0  ]                                                      scaler_wire;
-*/ 
 
 wire  [ Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0 ]                   feature_wire;    
 /*
@@ -384,25 +362,6 @@ i_weight_fetch weight_fetcher(
 );
 
 
-wire virreg_to_fmem_0;
-wire virreg_to_fmem_1;
-wire [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_reg_to_select_array;
-virtical_reg i_virtical_reg(
-    .clk(clk),
-    .rst(rst),
-    .com_type(),
-    .kernel_size(),
-    .enable(virtical_reg_shift),
-    .in_select(virreg_input_sel),
-    .feature_en_0(virreg_to_fmem_0),
-    .feature_en_1(virreg_to_fmem_1),
-    .dia_0(feature_mem_read_data_0),
-    .dia_1(feature_mem_read_data_1),
-    .doa(virtical_reg_to_select_array),
-    .shift_done(shift_done_from_virreg)
-);
-
-
 wire [Tn*KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH-1 : 0] weight_wire;
 weight_buffer_array #(16, 4, 64, 3) weight_buffer(
     .clk(clk),
@@ -416,55 +375,9 @@ weight_buffer_array #(16, 4, 64, 3) weight_buffer(
 );
 
 
-wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] ternary_com_out;
-TnKK_select_array ternary_com_array(
-    .clk(clk),
-    .rst(rst),
-    .feature_in(virtical_reg_to_select_array),
-    .weight_in(weight_wire),
-    .enable(shift_done_from_virreg),
-    .temp_feature_out(ternary_com_out)
-);
-
-wire [Tn*FEATURE_WIDTH - 1 : 0] tn_kernel_out;
-adder_tree_Tn_kernel kernel_adder_tree(
-    .fast_clk(clk),
-    .rst(rst),
-    .ternery_res_tn(ternary_com_out),
-    .kernel_sum_tn(tn_kernel_out)
-);
-
-wire [FEATURE_WIDTH-1 : 0] feature_temp;
-adder_tree_tn channel_adder_tree(
-    .fast_clk(clk),
-    .rst(rst),
-    .tn_input(tn_kernel_out),
-    .out(feature_temp)
-);
-
-
-wire [15:0] s_wr_addr;
-// wire [SCALER_WIDTH-1 : 0] 
-wire [63:0] s_wr_data;
-wire s_wr_en;
-i_weight_fetch #(16, 0) i_scaler_fetch(
-    .clk(clk),
-    .rst(rst),
-    .weight_fetch_enable(scaler_fetch_enable),
-    .fetch_type(fetch_type),
-    .src_addr(src_addr),
-    .dst_addr(dst_addr),
-    .w_data(i_w_bus_port),
-    .rd_addr(i_w_addr),
-    .rd_en(i_w_enable),
-    .wr_addr(s_wr_addr),
-    .wr_data(s_wr_data),
-    .wr_en(s_wr_en),
-    .fetch_done(fetch_done_from_s)
-);
-
-
-// wire [SCALER_WIDTH-1 : 0] scaler_data;
+// wire [15:0] s_wr_addr;
+// wire [63:0] s_wr_data;
+// wire s_wr_en;
 wire [63:0] scaler_data;
 syn_fifo scaler_buffer(
     .clk(clk),
@@ -480,15 +393,35 @@ syn_fifo scaler_buffer(
 );
 
 
-wire [FEATURE_WIDTH + SCALER_WIDTH-1 : 0] scaled_feature;
-scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) feature_scaling_unit (
-    .clk(clk),
-    .rst(rst),
-    .enable(1'b1),
-    .data_in(feature_temp),
-    .scaler_in(scaler_data[15 : 0]),
-    .data_o(scaled_feature)
+configurable_data_path #(
+    .Tn(Tn),
+    .FEATURE_WIDTH(FEATURE_WIDTH), 
+    .KERNEL_SIZE(KERNEL_SIZE),
+    .KERNEL_WIDTH(KERNEL_WIDTH),
+    .SCALER_WIDTH(SCALER_WIDTH),
+    .Tm(Tm)
+    ) CLP (
+        .clk(clk),
+        .rst(rst),
+        .com_type(),
+        .kernel_size(),
+    
+        .virtical_reg_shift(virtical_reg_shift),
+        .virreg_input_sel(virreg_input_sel),
+        .virreg_to_fmem_0(virreg_to_fmem_0),
+        .virreg_to_fmem_1(virreg_to_fmem_1),
+        .feature_mem_read_data_0(feature_mem_read_data_0),
+        .feature_mem_read_data_1(feature_mem_read_data_1),
+        .shift_done_from_virreg(shift_done_from_virreg),
+
+        .weight_wire(weight_wire),
+        .weight_read_en(),
+
+        .scaler_data(scaler_data),
+        .scaled_feature(scaled_feature)
 );
+
+
 /*
 o_feature_reg #(.Tm(Tm), .FEATURE_WIDTH(FEATURE_WIDTH)) o_feature_buffer(
     .clk(clk),
@@ -500,15 +433,12 @@ o_feature_reg #(.Tm(Tm), .FEATURE_WIDTH(FEATURE_WIDTH)) o_feature_buffer(
 );
 */
 
-/*
-scaler_ctr scaler_ctr0(
-        .clk(clk),
-        .rst(rst),
-        .state(state),
-        .scaler_mem_addr(scaler_mem_addr),
-        .scaler_wire(scaler_wire)
-        );
-*/
+
+
+
+
+endmodule
+
 
 /*
 CLP CLP0( 
@@ -551,5 +481,3 @@ counter test_cnt(
 .rst(rst),
 .cnt(cnt_for_test));
 */
-
-endmodule

@@ -2,6 +2,7 @@
 verilog xil_defaultlib  --include "../../../../../src" \
 "../../../../Tproclocal.srcs/sources_1/ip/asymmetric_fifo/sim/asymmetric_fifo.v" \
 "../../../../../src/arithmetic_unit_general.v" \
+"../../../../../src/configurable_adder_path.v" \
 "../../../../../src/custom_fifo.v" \
 "../../../../../src/dp_ram.v" \
 "../../../../../src/feature_laod.v" \

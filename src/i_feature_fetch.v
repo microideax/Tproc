@@ -138,7 +138,8 @@ always@(posedge clk) begin
         rd_en <= 1'b0;
         rd_addr <= 16'h0000;
     end else begin
-        if (weight_fetch_enable | scaler_fetch_enable) begin
+        // if (weight_fetch_enable | scaler_fetch_enable) begin
+        if (weight_fetch_enable | scaler_fetch_enable) begin            
             rd_en <= 1'b1;
             rd_addr <= src_addr + WEIGHT_ADDR_OFFSET;
         end

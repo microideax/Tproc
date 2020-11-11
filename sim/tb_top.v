@@ -85,6 +85,7 @@ top mytest(
         .instr_fetch_addr(i_instr_addr),
         .instr_rd_en(i_instr_rd_en),
         
+        .scaled_feature(),
         .acc_enable(acc_enable)
         // .CLP_state()      //0 CLP idle    1 CLP busy
         // .weight_wire(weight_wire),

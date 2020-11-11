@@ -9,6 +9,10 @@ INFO: [VRFC 10-311] analyzing module adder_tree_single_kernel
 INFO: [VRFC 10-311] analyzing module adder_tree_Tn_kernel
 INFO: [VRFC 10-311] analyzing module adder_tree_tn
 INFO: [VRFC 10-311] analyzing module scaler_multiply_unit
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/gigabyte/workspace/Tproc_local/Tproc/src/configurable_adder_path.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module configurable_data_path
+WARNING: [VRFC 10-3676] redeclaration of ansi port 'virreg_to_fmem_0' is not allowed [/home/gigabyte/workspace/Tproc_local/Tproc/src/configurable_adder_path.v:37]
+WARNING: [VRFC 10-3676] redeclaration of ansi port 'virreg_to_fmem_1' is not allowed [/home/gigabyte/workspace/Tproc_local/Tproc/src/configurable_adder_path.v:38]
 INFO: [VRFC 10-2263] Analyzing Verilog file "/home/gigabyte/workspace/Tproc_local/Tproc/src/custom_fifo.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module syn_fifo
 WARNING: [VRFC 10-3676] redeclaration of ansi port 'data_out' is not allowed [/home/gigabyte/workspace/Tproc_local/Tproc/src/custom_fifo.v:30]
@@ -32,27 +36,22 @@ INFO: [VRFC 10-2263] Analyzing Verilog file "/home/gigabyte/workspace/Tproc_loca
 INFO: [VRFC 10-311] analyzing module TnKK_select_array
 INFO: [VRFC 10-2263] Analyzing Verilog file "/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module top
-INFO: [VRFC 10-2458] undeclared symbol i_mem_full, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:77]
-INFO: [VRFC 10-2458] undeclared symbol i_mem_empty, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:78]
-INFO: [VRFC 10-2458] undeclared symbol instr_mem_wr_enable, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:86]
-WARNING: [VRFC 10-2938] 'i_mem_empty' is already implicitly declared on line 78 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:119]
-WARNING: [VRFC 10-2938] 'i_mem_full' is already implicitly declared on line 77 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:120]
-INFO: [VRFC 10-2458] undeclared symbol fetch_done_wire, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:128]
-WARNING: [VRFC 10-2938] 'fetch_done_wire' is already implicitly declared on line 128 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:159]
-INFO: [VRFC 10-2458] undeclared symbol feature_mem_wr_addr, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:225]
-INFO: [VRFC 10-2458] undeclared symbol feature_mem_wr_data, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:226]
-INFO: [VRFC 10-2458] undeclared symbol feature_mem_enable, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:227]
-INFO: [VRFC 10-2458] undeclared symbol mem_select, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:228]
-WARNING: [VRFC 10-2938] 'feature_mem_enable' is already implicitly declared on line 227 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:246]
-WARNING: [VRFC 10-2938] 'feature_mem_wr_addr' is already implicitly declared on line 225 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:247]
-WARNING: [VRFC 10-2938] 'mem_select' is already implicitly declared on line 228 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:248]
-WARNING: [VRFC 10-2938] 'feature_mem_wr_data' is already implicitly declared on line 226 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:249]
-INFO: [VRFC 10-2458] undeclared symbol virreg_to_fmem_0, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:295]
-INFO: [VRFC 10-2458] undeclared symbol virreg_to_fmem_1, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:309]
-WARNING: [VRFC 10-2938] 'virreg_to_fmem_0' is already implicitly declared on line 295 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:387]
-WARNING: [VRFC 10-2938] 'virreg_to_fmem_1' is already implicitly declared on line 309 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:388]
-INFO: [VRFC 10-2458] undeclared symbol fetch_done_from_s, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:463]
-WARNING: [VRFC 10-3380] identifier 'test_exe_done' is used before its declaration [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:163]
+INFO: [VRFC 10-2458] undeclared symbol i_mem_full, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:72]
+INFO: [VRFC 10-2458] undeclared symbol i_mem_empty, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:73]
+INFO: [VRFC 10-2458] undeclared symbol instr_mem_wr_enable, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:81]
+WARNING: [VRFC 10-2938] 'i_mem_empty' is already implicitly declared on line 73 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:114]
+WARNING: [VRFC 10-2938] 'i_mem_full' is already implicitly declared on line 72 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:115]
+INFO: [VRFC 10-2458] undeclared symbol fetch_done_wire, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:123]
+WARNING: [VRFC 10-2938] 'fetch_done_wire' is already implicitly declared on line 123 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:154]
+INFO: [VRFC 10-2458] undeclared symbol feature_mem_wr_addr, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:221]
+INFO: [VRFC 10-2458] undeclared symbol feature_mem_wr_data, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:222]
+INFO: [VRFC 10-2458] undeclared symbol feature_mem_enable, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:223]
+INFO: [VRFC 10-2458] undeclared symbol mem_select, assumed default net type wire [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:224]
+WARNING: [VRFC 10-2938] 'feature_mem_enable' is already implicitly declared on line 223 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:242]
+WARNING: [VRFC 10-2938] 'feature_mem_wr_addr' is already implicitly declared on line 221 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:243]
+WARNING: [VRFC 10-2938] 'mem_select' is already implicitly declared on line 224 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:244]
+WARNING: [VRFC 10-2938] 'feature_mem_wr_data' is already implicitly declared on line 222 [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:245]
+WARNING: [VRFC 10-3380] identifier 'test_exe_done' is used before its declaration [/home/gigabyte/workspace/Tproc_local/Tproc/src/top.v:159]
 INFO: [VRFC 10-2263] Analyzing Verilog file "/home/gigabyte/workspace/Tproc_local/Tproc/src/top_fsm.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module top_fsm
 INFO: [VRFC 10-2263] Analyzing Verilog file "/home/gigabyte/workspace/Tproc_local/Tproc/src/true_dpram_sclk.v" into library xil_defaultlib

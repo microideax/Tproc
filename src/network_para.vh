@@ -6,7 +6,7 @@
 `define Tn                              4
 `define FEATURE_WIDTH                   16
 `define BIAS_WIDTH                      8
-`define SCALER_WIDTH                    8
+`define SCALER_WIDTH                    16
 `define KERNEL_WIDTH                    2
 `define KERNEL_SIZE                     5
 

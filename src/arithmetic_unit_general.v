@@ -214,9 +214,19 @@ module adder_tree_Tn_kernel #(
 ) (
     input wire fast_clk,
     input wire rst,
+    input wire enable,
     input wire [Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 :0] ternery_res_tn,
-    output wire [Tn * FEATURE_WIDTH - 1 : 0] kernel_sum_tn
+    output wire [Tn * FEATURE_WIDTH - 1 : 0] kernel_sum_tn,
+    output wire adder_done
 );
+
+
+wire lat_1_enable, lat_2_enable, lat_3_enable, lat_4_enable;
+register_x1 #(.FEATURE_WIDTH(1)) lat_1(.clk(fast_clk), .rst(rst), .in_data(enable), .o_data(lat_1_enable));
+register_x1 #(.FEATURE_WIDTH(1)) lat_2(.clk(fast_clk), .rst(rst), .in_data(lat_1_enable), .o_data(lat_2_enable));
+register_x1 #(.FEATURE_WIDTH(1)) lat_3(.clk(fast_clk), .rst(rst), .in_data(lat_2_enable), .o_data(lat_3_enable));
+register_x1 #(.FEATURE_WIDTH(1)) lat_4(.clk(fast_clk), .rst(rst), .in_data(lat_3_enable), .o_data(lat_4_enable));
+assign adder_done = lat_4_enable;
 
 
 genvar i;
@@ -240,9 +250,18 @@ module adder_tree_tn #(
 ) (
     input wire fast_clk,
     input wire rst,
+    input wire enable,
     input wire [Tn * FEATURE_WIDTH - 1 :0] tn_input,
-    output wire [FEATURE_WIDTH - 1 : 0] out
+    output wire [FEATURE_WIDTH - 1 : 0] out,
+    output wire adder_done
 );
+
+wire lat_1_enable, lat_2_enable, lat_3_enable, lat_4_enable;
+register_x1 #(.FEATURE_WIDTH(1)) lat_1(.clk(fast_clk), .rst(rst), .in_data(enable), .o_data(lat_1_enable));
+// register_x1 #(.FEATURE_WIDTH(1)) lat_2(.clk(fast_clk), .rst(rst), .in_data(lat_1_enable), .o_data(lat_2_enable));
+// register_x1 #(.FEATURE_WIDTH(1)) lat_3(.clk(fast_clk), .rst(rst), .in_data(lat_2_enable), .o_data(lat_3_enable));
+// register_x1 #(.FEATURE_WIDTH(1)) lat_4(.clk(fast_clk), .rst(rst), .in_data(lat_3_enable), .o_data(lat_4_enable));
+assign adder_done = lat_1_enable;
 
 genvar i;
 generate
