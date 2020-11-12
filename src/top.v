@@ -158,7 +158,8 @@ wire shift_done_from_virreg;
 
 assign fetch_done_wire = fetch_done_from_i | fetch_done_from_w | shift_done_from_virreg | test_exe_done;
 
-wire [2:0] current_kernel_size;
+wire [3:0] current_kernel_size;
+wire [7:0] com_type_wire;
 wire [7:0] current_feature_size;
 wire line_buffer_enable;
 wire feature_in_select;
@@ -196,6 +197,7 @@ instruction_decode instruction_decoder(
 
 // the following ports are idle for now, TODO: delete or use in the other operations
                       .current_kernel_size(current_kernel_size),
+                      .com_type(com_type_wire),
                       .current_feature_size(current_feature_size),
                       .line_buffer_enable(line_buffer_enable),
                       .feature_in_select(feature_in_select), // 0 :  CLP read feature from feature buffer 0   1:  CLP read feature from ram1
@@ -403,8 +405,8 @@ configurable_data_path #(
     ) CLP (
         .clk(clk),
         .rst(rst),
-        .com_type(),
-        .kernel_size(),
+        .com_type(com_type_wire),
+        .kernel_size(current_kernel_size),
     
         .virtical_reg_shift(virtical_reg_shift),
         .virreg_input_sel(virreg_input_sel),
@@ -415,6 +417,7 @@ configurable_data_path #(
         .shift_done_from_virreg(shift_done_from_virreg),
 
         .weight_wire(weight_wire),
+        .weight_addr(),
         .weight_read_en(),
 
         .scaler_data(scaler_data),

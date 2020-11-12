@@ -34,8 +34,9 @@ module instruction_decode(
     //    output  reg   [3:0]      CLP_type,
 
     // interface group to conv/dwconv/deconv
-       output  reg   [2:0]      current_kernel_size,
-       output  reg   [7:0]      current_feature_size,
+       output  reg   [3:0]   current_kernel_size,
+       output  reg   [3:0]   com_type,
+       output  reg   [7:0]   current_feature_size,
        output  reg              line_buffer_enable,
        output  reg              feature_in_select,   //0: CLP read feature from ram0          1:  CLP read feature from ram1
        output  reg              line_buffer_mod,
@@ -103,6 +104,7 @@ always@(posedge clk) begin
         reg_enable <= 0;
         test_exe_done <= 0;
         vreg_input_select <=0;
+        com_type <= 8'h00;
     end else begin
         case (opcode)
             8'h01: begin
@@ -110,6 +112,7 @@ always@(posedge clk) begin
                 weight_fetch_enable <= reg_1[0];
                 bias_fetch_enable <= reg_1[1];
                 scaler_fetch_enable <= reg_1[2];
+                com_type <= 8'h00;
             end
             8'h02: begin
                 feature_fetch_enable <= ~reg_1[0];
@@ -120,6 +123,7 @@ always@(posedge clk) begin
                 dst_addr <= {reg_4[3:0], reg_5[3:0]};
                 mem_sel <= reg_6;
                 fetch_counter <= reg_7;
+                com_type <= 8'h00;
             end
             8'h04: begin
                 feature_fetch_enable <= ~reg_1[0];
@@ -129,8 +133,10 @@ always@(posedge clk) begin
                 src_addr <= {reg_2, reg_3};
                 dst_addr <= {reg_4[3:0], reg_5[3:0]}; // reg_4 is not used in the current stage
                 mem_sel <= reg_6;
+                com_type <= 8'h00;
             end
             8'h81: begin
+                com_type <= 8'h01;
                 current_kernel_size <= reg_3;
                 current_feature_size <= reg_2;
                 line_buffer_enable <= reg_4[0];
@@ -140,6 +146,7 @@ always@(posedge clk) begin
             8'h40: begin
                 reg_enable <= reg_1[0];
                 vreg_input_select <= reg_2[0];
+                com_type <= 8'h00;
             end
             8'h82: begin
                 $display("Null instruction!!!");
@@ -162,6 +169,7 @@ always@(posedge clk) begin
                 reg_enable <= 0;
                 test_exe_done <= 0;
                 vreg_input_select <= 0;
+                com_type <= 8'h00;
             end
         endcase
     end

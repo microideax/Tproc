@@ -14,8 +14,11 @@ module configurable_data_path #(
 ) (
     input wire clk,
     input wire rst,
+
+    input wire config_enable,
+    input wire config_clear,
     input wire [7:0] com_type,
-    input wire [7:0] kernel_size,
+    input wire [3:0] kernel_size,
 
     input wire virtical_reg_shift,
     input wire virreg_input_sel, // from instruction decoder
@@ -26,7 +29,8 @@ module configurable_data_path #(
     output wire shift_done_from_virreg,
 
     input wire [Tn*KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH-1 : 0] weight_wire,
-    output wire weight_read_en,
+    output reg [15:0] weight_addr,
+    output reg weight_read_en,
     
     input wire [15 : 0] scaler_data,
     output wire [Tm* FEATURE_WIDTH + SCALER_WIDTH-1 : 0] scaled_feature_output
@@ -35,12 +39,27 @@ module configurable_data_path #(
 // wire shift_done_from_virreg;
 // assign shift_done_from_virreg = shift_done_from_virreg;
 
-genvar i, j;
+reg [7 : 0] com_type_reg;
+always@(posedge clk) begin
+  if(rst) begin
+    com_type_reg <= 8'h00;
+  end 
+  else begin
+    if(config_enable)begin
+      com_type_reg <= com_type;
+    end else if(config_clear) begin
+      com_type_reg <= 8'h00;
+    end  else begin
+      com_type_reg <= com_type_reg;
+    end
+end
+end
 
 wire virreg_to_fmem_0;
 wire virreg_to_fmem_1;
 wire [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_reg_to_select_array;
 wire [Tm*FEATURE_WIDTH - 1 : 0] scaled_feature;
+wire [Tm*16-1 : 0] scaler_reg;
 
 virtical_reg i_virtical_reg(
     .clk(clk),
@@ -59,25 +78,49 @@ virtical_reg i_virtical_reg(
 
 // virtical_reg w_virtical_reg();
 reg [4:0] out_channel_counter;
+reg feature_ready_flag;
+
+always@(posedge clk) begin
+  if(rst) begin
+    feature_ready_flag <= 1'b0;
+  end else begin
+    if(shift_done_from_virreg) begin
+        feature_ready_flag <= 1'b1;
+      end 
+      else if(out_channel_counter == Tm) begin
+        feature_ready_flag <= 1'b0;
+      end    
+  end
+end
+
 always@(posedge clk)begin
     if(rst)begin
         out_channel_counter <= 5'h00;
     end
     else begin
-        case(com_type)
-        CONV: begin
-            if(virtical_reg_shift)begin
-                
+      case(com_type_reg)
+        8'h01: begin //CONV
+            if(feature_ready_flag)begin
+              weight_addr <= out_channel_counter;
+              weight_read_en <= 1'b1;
+              out_channel_counter <= out_channel_counter + 1'b1;
+            end else begin
+              weight_addr <= 0;
+              weight_read_en <= 0;
+              out_channel_counter <=0;
             end
         end
-        DWCONV: begin
-            
+        8'h02: begin // DWCONV
+            weight_read_en <= 1'b0;
         end
-        PWCONV: begin
-            
+        8'h04: begin // PWCONV
+            weight_read_en <= 1'b0;
         end
+        default: begin
+          weight_read_en <= 1'b0;
         end
-    end
+        endcase
+      end
 end
 
 wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] ternary_com_out;
@@ -118,9 +161,10 @@ scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) single_
     .enable(1'b1),
     .data_in(feature_temp),
     .scaler_in(scaler_data[15 : 0]),
-    .data_o(scaled_feature)
+    .data_o(scaled_feature[15:0])
 );
-
+/*
+genvar i;
 generate
     for(i=0; i<Tm; i=i+1)begin
         scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) tn_feature_scaling_unit(
@@ -133,7 +177,7 @@ generate
         );
     end
 endgenerate
-
+*/
 assign scaled_feature_output[Tm*FEATURE_WIDTH-1 : 0] = scaled_feature[Tm*FEATURE_WIDTH-1 : 0];
 
 endmodule
