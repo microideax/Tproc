@@ -2,7 +2,7 @@
 
 
 // Re-customize supported parameters
-`define Tm                              16
+`define Tm                              8
 `define Tn                              4
 `define FEATURE_WIDTH                   16
 `define BIAS_WIDTH                      8

@@ -35,7 +35,8 @@ module instruction_decode(
 
     // interface group to conv/dwconv/deconv
        output  reg   [3:0]   current_kernel_size,
-       output  reg   [3:0]   com_type,
+       output  reg   [7:0]   com_type,
+       output  reg           config_enable,
        output  reg   [7:0]   current_feature_size,
        output  reg              line_buffer_enable,
        output  reg              feature_in_select,   //0: CLP read feature from ram0          1:  CLP read feature from ram1
@@ -105,6 +106,7 @@ always@(posedge clk) begin
         test_exe_done <= 0;
         vreg_input_select <=0;
         com_type <= 8'h00;
+        config_enable <= 1'b0;
     end else begin
         case (opcode)
             8'h01: begin
@@ -137,6 +139,7 @@ always@(posedge clk) begin
             end
             8'h81: begin
                 com_type <= 8'h01;
+                config_enable <= 1'b1;
                 current_kernel_size <= reg_3;
                 current_feature_size <= reg_2;
                 line_buffer_enable <= reg_4[0];
@@ -147,6 +150,7 @@ always@(posedge clk) begin
                 reg_enable <= reg_1[0];
                 vreg_input_select <= reg_2[0];
                 com_type <= 8'h00;
+                config_enable <= 1'b0;
             end
             8'h82: begin
                 $display("Null instruction!!!");
@@ -170,6 +174,8 @@ always@(posedge clk) begin
                 test_exe_done <= 0;
                 vreg_input_select <= 0;
                 com_type <= 8'h00;
+                current_kernel_size <= 8'h00;
+                config_enable <= 1'b0;
             end
         endcase
     end

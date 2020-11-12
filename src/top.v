@@ -168,6 +168,8 @@ wire virtical_reg_shift;
 wire virreg_input_sel;
 wire test_exe_done;
 
+wire config_clp;
+
 instruction_decode instruction_decoder(
                       .clk(clk),
                       .rst(rst),
@@ -198,6 +200,7 @@ instruction_decode instruction_decoder(
 // the following ports are idle for now, TODO: delete or use in the other operations
                       .current_kernel_size(current_kernel_size),
                       .com_type(com_type_wire),
+                      .config_enable(config_clp),
                       .current_feature_size(current_feature_size),
                       .line_buffer_enable(line_buffer_enable),
                       .feature_in_select(feature_in_select), // 0 :  CLP read feature from feature buffer 0   1:  CLP read feature from ram1
@@ -363,15 +366,16 @@ i_weight_fetch weight_fetcher(
     .fetch_done(fetch_done_from_w)
 );
 
-
+wire clp_to_weight_buffer_enable;
+wire [15:0] clp_to_weight_buffer_addr;
 wire [Tn*KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH-1 : 0] weight_wire;
 weight_buffer_array #(16, 4, 64, 3) weight_buffer(
     .clk(clk),
     .ena(wr_cs_weight),
-    .enb(1'b1),
+    .enb(clp_to_weight_buffer_enable),
     .wea(w_wr_en),
     .addra(w_wr_addr),
-    .addrb(16'b0),
+    .addrb(clp_to_weight_buffer_addr),
     .dia(w_wr_data),
     .weight_buffer_out(weight_wire)
 );
@@ -405,6 +409,9 @@ configurable_data_path #(
     ) CLP (
         .clk(clk),
         .rst(rst),
+
+        .config_enable(config_clp),
+        .config_clear(),
         .com_type(com_type_wire),
         .kernel_size(current_kernel_size),
     
@@ -417,11 +424,11 @@ configurable_data_path #(
         .shift_done_from_virreg(shift_done_from_virreg),
 
         .weight_wire(weight_wire),
-        .weight_addr(),
-        .weight_read_en(),
+        .weight_addr(clp_to_weight_buffer_addr),
+        .weight_read_en(clp_to_weight_buffer_enable),
 
         .scaler_data(scaler_data),
-        .scaled_feature(scaled_feature)
+        .scaled_feature_output(scaled_feature)
 );
 
 

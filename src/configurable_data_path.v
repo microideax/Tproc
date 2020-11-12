@@ -58,6 +58,7 @@ end
 wire virreg_to_fmem_0;
 wire virreg_to_fmem_1;
 wire [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_reg_to_select_array;
+reg [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_data_reg;
 wire [Tm*FEATURE_WIDTH - 1 : 0] scaled_feature;
 wire [Tm*16-1 : 0] scaler_reg;
 
@@ -76,6 +77,19 @@ virtical_reg i_virtical_reg(
     .shift_done(shift_done_from_virreg)
 );
 
+always@(posedge clk) begin
+  if(rst) begin
+    virtical_data_reg <= 0;
+  end
+  else begin
+    if(shift_done_from_virreg) begin
+      virtical_data_reg <= virtical_reg_to_select_array;
+    end else begin
+      virtical_data_reg <= virtical_data_reg;
+    end
+  end
+end
+
 // virtical_reg w_virtical_reg();
 reg [4:0] out_channel_counter;
 reg feature_ready_flag;
@@ -87,15 +101,18 @@ always@(posedge clk) begin
     if(shift_done_from_virreg) begin
         feature_ready_flag <= 1'b1;
       end 
-      else if(out_channel_counter == Tm) begin
+      else if(out_channel_counter == (Tm-1)) begin
         feature_ready_flag <= 1'b0;
       end    
   end
 end
 
+
+reg sel_array_enable;
 always@(posedge clk)begin
     if(rst)begin
         out_channel_counter <= 5'h00;
+        weight_read_en <= 1'b0;
     end
     else begin
       case(com_type_reg)
@@ -122,14 +139,22 @@ always@(posedge clk)begin
         endcase
       end
 end
+always@(posedge clk)begin
+  if(rst) begin
+    sel_array_enable <= 1'b0;
+  end
+  else begin
+    sel_array_enable <= weight_read_en;
+  end
+end
 
 wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] ternary_com_out;
 TnKK_select_array ternary_com_array(
     .clk(clk),
     .rst(rst),
-    .feature_in(virtical_reg_to_select_array),
+    .feature_in(virtical_data_reg),
     .weight_in(weight_wire),
-    .enable(shift_done_from_virreg),
+    .enable(sel_array_enable),
     .temp_feature_out(ternary_com_out)
 );
 
