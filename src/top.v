@@ -385,19 +385,34 @@ weight_buffer_array #(16, 4, 64, 3) weight_buffer(
 // wire [63:0] s_wr_data;
 // wire s_wr_en;
 wire [63:0] scaler_data;
-syn_fifo scaler_buffer(
+wire scaler_buffer_rd_en;
+syn_fifo_dpram #(.DATA_WIDTH(64), .ADDR_WIDTH(4), .RAM_DEPTH(15)) scaler_buffer(
     .clk(clk),
     .rst(rst),
     .wr_cs(wr_cs_scaler),
-    .rd_cs(shift_done_from_virreg),
+    .rd_cs(scaler_buffer_rd_en),
     .data_in(w_wr_data),
-    .rd_en(shift_done_from_virreg),
-    .wr_en(w_wr_en),
+    .rd_en(scaler_buffer_rd_en),
+    .wr_en(wr_cs_scaler),
     .data_out(scaler_data),
     .empty(),
     .full()
 );
 
+/*
+syn_fifo instruction_mem(
+    .clk(clk),
+    .rst(rst),
+    .wr_cs(instr_mem_wr_enable),
+    .rd_cs(i_mem_rd_enable),
+    .data_in(fetcher_to_imem),
+    .rd_en(i_mem_rd_enable),
+    .wr_en(instr_mem_wr_enable),
+    .data_out(i_mem_dout),
+    .empty(i_mem_empty),
+    .full(i_mem_full)
+);
+*/
 
 configurable_data_path #(
     .Tn(Tn),
@@ -428,6 +443,7 @@ configurable_data_path #(
         .weight_read_en(clp_to_weight_buffer_enable),
 
         .scaler_data(scaler_data),
+        .scaler_buffer_rd_en(scaler_buffer_rd_en),
         .scaled_feature_output(scaled_feature)
 );
 

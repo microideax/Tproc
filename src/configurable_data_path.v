@@ -33,6 +33,7 @@ module configurable_data_path #(
     output reg weight_read_en,
     
     input wire [15 : 0] scaler_data,
+    output wire scaler_buffer_rd_en,
     output wire [Tm* FEATURE_WIDTH + SCALER_WIDTH-1 : 0] scaled_feature_output
 );
 
@@ -59,7 +60,7 @@ wire virreg_to_fmem_0;
 wire virreg_to_fmem_1;
 wire [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_reg_to_select_array;
 reg [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_data_reg;
-wire [Tm*FEATURE_WIDTH - 1 : 0] scaled_feature;
+wire [Tm*FEATURE_WIDTH - 1 : 0] tm_scaled_feature;
 wire [Tm*16-1 : 0] scaler_reg;
 
 virtical_reg i_virtical_reg(
@@ -163,31 +164,37 @@ wire tn_kernel_done;
 adder_tree_Tn_kernel kernel_adder_tree(
     .fast_clk(clk),
     .rst(rst),
-    .enable(shift_done_from_virreg),
+    .enable(sel_array_enable),
     .ternery_res_tn(ternary_com_out),
     .kernel_sum_tn(tn_kernel_out),
     .adder_done(tn_kernel_done)
 );
 
-wire [FEATURE_WIDTH-1 : 0] feature_temp;
+wire [FEATURE_WIDTH-1 : 0] tm_feature_temp;
 wire tn_channel_done;
 adder_tree_tn channel_adder_tree(
     .fast_clk(clk),
     .rst(rst),
     .enable(tn_kernel_done),
     .tn_input(tn_kernel_out),
-    .out(feature_temp),
+    .out(tm_feature_temp),
     .adder_done(tn_channel_done)
 );
 
+assign scaler_buffer_rd_en = tn_kernel_done;
+wire [FEATURE_WIDTH-1 : 0] scaled_feature;
 scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) single_feature_scaling_unit (
     .clk(clk),
     .rst(rst),
-    .enable(1'b1),
-    .data_in(feature_temp),
+    .enable(tn_channel_done),
+    .data_in(tm_feature_temp),
     .scaler_in(scaler_data[15 : 0]),
-    .data_o(scaled_feature[15:0])
+    .data_o(scaled_feature)
 );
+
+
+// assign tm_scaled_feature = scaled_feature;
+
 /*
 genvar i;
 generate
@@ -203,6 +210,56 @@ generate
     end
 endgenerate
 */
-assign scaled_feature_output[Tm*FEATURE_WIDTH-1 : 0] = scaled_feature[Tm*FEATURE_WIDTH-1 : 0];
+
+// assign scaled_feature_output[Tm*FEATURE_WIDTH-1 : 0] = tm_scaled_feature[Tm*FEATURE_WIDTH-1 : 0];
+reg [4:0] tm_buffer_sel_reg, reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6;
+always@(posedge clk)begin
+  if(rst) begin
+    tm_buffer_sel_reg <= 0;
+    reg_0 <= 0;
+    reg_1 <= 0;
+    reg_2 <= 0;
+    reg_3 <= 0;
+    reg_4 <= 0;
+    reg_5 <= 0;
+    reg_6 <= 0;
+  end
+  else begin
+    tm_buffer_sel_reg <= reg_6;
+    reg_6 <= reg_5;
+    reg_5 <= reg_4;
+    reg_4 <= reg_3;
+    reg_3 <= reg_2;
+    reg_2 <= reg_1;
+    reg_1 <= out_channel_counter;
+  end
+end
+
+wire [Tm : 0]tm_wr_enable;
+assign tm_wr_enable = 1 << tm_buffer_sel_reg;
+// always@(posedge clk)begin
+//   if(rst)begin
+//     tm_wr_enable <= 0;
+//   end
+//   else begin
+//     tm_wr
+//   end
+// end
+
+genvar i;
+generate
+  for(i=0; i<Tm; i=i+1)begin
+    dp_ram #(.RAM_DEPTH(), .ADDR_WIDTH(), .DATA_WIDTH()) tm_data_buffer(
+      .clk(clk),
+      .ena(tm_wr_enable[i+1]),
+      .enb(),
+      .wea(tm_wr_enable[i+1]),
+      .addra(),
+      .addrb(),
+      .dia(scaled_feature),
+      .dob()
+    ); 
+  end
+endgenerate
 
 endmodule
