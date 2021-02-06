@@ -135,6 +135,7 @@ always@(posedge clk) begin
                 src_addr <= {reg_2, reg_3};
                 dst_addr <= {reg_4[3:0], reg_5[3:0]}; // reg_4 is not used in the current stage
                 mem_sel <= reg_6;
+                fetch_counter <= reg_7;
                 com_type <= 8'h00;
             end
             8'h81: begin
