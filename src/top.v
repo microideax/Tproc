@@ -62,6 +62,8 @@ wire fetch_instruction_from_ddr;
 wire instr_mem_enable;
 wire [63:0] fetcher_to_imem;
 wire [4:0]  i_mem_addr_in;
+wire i_mem_empty;
+wire i_mem_full;
 
 instr_fetch instruction_fetcher(
 .clk(clk),
@@ -111,8 +113,7 @@ syn_fifo instruction_mem(
 wire  [3:0]state;
 
 wire instruction_enable;
-wire i_mem_empty;
-wire i_mem_full;
+wire fetch_done_wire;
  
 top_fsm CLP_fsm(
             .clk(clk),
@@ -151,7 +152,7 @@ wire [7:0]  dst_addr;
 wire [7:0]  mem_sel;
 wire [7:0]  fetch_counter;
 
-wire fetch_done_wire;
+
 wire fetch_done_from_i;
 wire fetch_done_from_w;
 wire shift_done_from_virreg;
@@ -208,7 +209,11 @@ instruction_decode instruction_decoder(
                       .feature_out_select(feature_out_select)
                     );     
                     
-               
+wire                                     feature_mem_enable;
+wire  [7:0]                              feature_mem_wr_addr;
+wire                                        mem_select;
+wire  [127:0]                                feature_mem_wr_data;
+                                   
 i_feature_fetch input_fetch(
                        .clk(clk),
                        .rst(rst),
@@ -222,6 +227,7 @@ i_feature_fetch input_fetch(
                        .dst_addr(dst_addr),
                        .mem_sel(mem_sel),
                        .feature_size(current_feature_size),
+                       .fetch_counter(fetch_counter),
                     //    .feature_in_select(feature_in_select),
                        .wr_addr(feature_mem_wr_addr),
                        .wr_data(feature_mem_wr_data),
@@ -244,10 +250,7 @@ wire feature_mem_read_enable_1;
 wire [7:0] feature_mem_read_addr_1;
 wire [Tn*FEATURE_WIDTH*KERNEL_SIZE-1 : 0] feature_mem_read_data_1;
 
-wire                                        feature_mem_enable;
-wire  [7:0]                              feature_mem_wr_addr;
-wire                                        mem_select;
-wire  [127:0]                                feature_mem_wr_data;
+
 
 
 feature_load i_feature_switch(

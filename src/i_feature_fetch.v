@@ -13,6 +13,7 @@ input wire [7:0] fetch_type,
 input [15:0] src_addr,
 input [7:0]  dst_addr,
 input [7:0]  mem_sel,
+input [7:0]  fetch_counter,
 
 input wire [7:0] feature_size,
 // input wire feature_in_select,
@@ -26,11 +27,12 @@ output reg fetch_done // this signal is used to inform the top_fsm for the accom
 
 // this module reads data from external memory to the on chip feature_in_memory  
 // testing format for input fetch
-// opcode | reg_1 | reg_2 | reg_3 | reg_4 | reg_5 | reg_6| reg_7|
-// code   | f_type| saddrh| saddrl| daddrh| daddrl|memsel| null | 
+// opcode | reg_1 | reg_2 | reg_3 | reg_4 | reg_5 | reg_6| reg_7 |
+// code   | f_type| saddrh| saddrl| daddrh| daddrl|memsel|counter| 
 
 reg [14:0] wr_addr_tmp;
 reg i_mem_select_tmp;
+reg [7:0] counter;
 
 always@(posedge clk) begin
     if(rst) begin
@@ -64,24 +66,47 @@ always@(posedge clk) begin
     if(rst) begin
         read_data <= 1'b0;
         fetch_addr <= 16'h0000;
+        counter <= 8'h00;
     end else begin
         if (feature_fetch_enable) begin
             read_data <= 1'b1;
             fetch_addr <= src_addr;
+            counter <= (fetch_counter == 8'b0) ? 8'b1 : fetch_counter;
+            // to be compatible with former instruction, final edition -->counter <= fetch_counter;
         end
         else begin
-            read_data <= 1'b0;
-            fetch_addr <= 16'h0000;
+            if ((counter != 8'h00) && (counter != 8'h01)) begin
+                read_data <= 1'b1;
+                fetch_addr <= fetch_addr + 16'h0001;///////////// right?
+                counter <= counter - 1; 
+            end
+            else begin
+                read_data <= 1'b0;
+                fetch_addr <= 16'h0000;
+                counter <= 8'h00; 
+            end
         end
     end
 end
 
 reg feature_fetch_flag;
 reg feature_fetch_tmp;
-always@(posedge clk) begin
-    feature_fetch_tmp <= feature_fetch_enable;
-    feature_fetch_flag <= feature_fetch_tmp;
-    fetch_done <= feature_fetch_flag; // TODO: improve with data ensure mechanism, make sure the feature data is access with ack signal
+
+//always@(posedge clk) begin
+//    feature_fetch_tmp <= feature_fetch_enable;
+//    feature_fetch_flag <= feature_fetch_tmp;
+//    fetch_done <= feature_fetch_flag; // TODO: improve with data ensure mechanism, make sure the feature data is access with ack signal
+//end
+
+always @(posedge clk) begin
+    if(rst) begin
+        //feature_fetch_tmp <= 0;
+        feature_fetch_flag <= 0;
+        fetch_done <= 0;
+    end else begin
+        feature_fetch_flag <= (counter == 1) ? 1 : 0;
+        fetch_done <= feature_fetch_flag;
+    end
 end
 
 assign wr_data = i_data;
