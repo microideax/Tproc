@@ -20,7 +20,7 @@ input wire [7:0] feature_size,
 
 output reg [14:0] wr_addr,
 output wire [127:0] wr_data,
-output wire wr_en,
+output reg wr_en,
 output reg i_mem_select,
 output reg fetch_done // this signal is used to inform the top_fsm for the accomplishment of data fetch
 );      
@@ -30,88 +30,65 @@ output reg fetch_done // this signal is used to inform the top_fsm for the accom
 // opcode | reg_1 | reg_2 | reg_3 | reg_4 | reg_5 | reg_6| reg_7 |
 // code   | f_type| saddrh| saddrl| daddrh| daddrl|memsel|counter| 
 
-reg [14:0] wr_addr_tmp;
-reg i_mem_select_tmp;
 reg [7:0] counter;
-
-always@(posedge clk) begin
-    if(rst) begin
-        i_mem_select <= 1'b0; 
-        wr_addr <= 0;
-    end
-    else begin
-        i_mem_select_tmp <= mem_sel[0];
-        i_mem_select <= i_mem_select_tmp;
-        wr_addr_tmp <= dst_addr;
-        wr_addr <= wr_addr_tmp;
-    end
-end
-
-/*
-always@(posedge clk) begin
-    if(rst) begin
-        fetch_done <= 1'b0;
-    end
-    else begin
-        if(wr_addr_tmp == 1) begin
-            fetch_done <= 1'b1;
-        end else begin
-            fetch_done <= 1'b0;
-        end
-    end
-end
-*/
 
 always@(posedge clk) begin
     if(rst) begin
         read_data <= 1'b0;
         fetch_addr <= 16'h0000;
+        wr_addr <= 15'b0;
+        i_mem_select <= 1'b0;
+        wr_en <= 1'b0;
         counter <= 8'h00;
     end else begin
         if (feature_fetch_enable) begin
             read_data <= 1'b1;
             fetch_addr <= src_addr;
-            counter <= (fetch_counter == 8'b0) ? 8'b1 : fetch_counter;
+            wr_addr <= dst_addr;
+            i_mem_select <= mem_sel[0];
+            wr_en <= 1'b1;
+            counter <= (fetch_counter == 8'b0) ? 8'b0 : (fetch_counter - 1);
             // to be compatible with former instruction, final edition -->counter <= fetch_counter;
         end
         else begin
-            if ((counter != 8'h00) && (counter != 8'h01)) begin
+            if (counter != 8'h00) begin // continue fetching
                 read_data <= 1'b1;
                 fetch_addr <= fetch_addr + 16'h0001;///////////// right?
+                wr_addr[3:0] <= (wr_addr[3:0] == 4'd4) ? 4'b0 : (wr_addr[3:0] + 4'b1);
+                wr_addr[7:4] <= (wr_addr[3:0] < 4'd4) ? wr_addr[7:4]
+                                  : (wr_addr[3:0] == 4'd4 && wr_addr[7:4] < 4'd3) ? wr_addr[7:4] + 1
+                                  : 4'b0;
+                wr_addr[14:8] <= 0;
+                i_mem_select <= (wr_addr[3:0] == 4'd4 && wr_addr[7:4] == 4'd3) ? i_mem_select + 1'b1 : i_mem_select;
+                wr_en <= 1'b1;
                 counter <= counter - 1; 
+
             end
             else begin
                 read_data <= 1'b0;
                 fetch_addr <= 16'h0000;
+                wr_addr <= 15'b0;
+                i_mem_select <= 1'b0;
+                wr_en <= 1'b0;
                 counter <= 8'h00; 
             end
         end
     end
 end
 
-reg feature_fetch_flag;
 reg feature_fetch_tmp;
-
-//always@(posedge clk) begin
-//    feature_fetch_tmp <= feature_fetch_enable;
-//    feature_fetch_flag <= feature_fetch_tmp;
-//    fetch_done <= feature_fetch_flag; // TODO: improve with data ensure mechanism, make sure the feature data is access with ack signal
-//end
 
 always @(posedge clk) begin
     if(rst) begin
-        //feature_fetch_tmp <= 0;
-        feature_fetch_flag <= 0;
+        feature_fetch_tmp <= 0;
         fetch_done <= 0;
     end else begin
-        feature_fetch_flag <= (counter == 1) ? 1 : 0;
-        fetch_done <= feature_fetch_flag;
+        feature_fetch_tmp <= (feature_fetch_enable || counter == 1);
+        fetch_done <= (feature_fetch_tmp && counter == 0);
     end
 end
 
 assign wr_data = i_data;
-// assign wr_addr = dst_addr_reg;
-assign wr_en = feature_fetch_flag;
 
 endmodule
 
