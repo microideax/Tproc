@@ -2,7 +2,7 @@
 
 `include "network_para.vh"
 
-module virtical_reg #(
+module vertical_reg #(
     parameter Tn = `Tn,
     parameter KERNEL_SIZE = `KERNEL_SIZE,
     parameter KERNEL_WIDTH = `KERNEL_WIDTH,
