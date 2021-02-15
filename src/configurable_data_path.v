@@ -24,8 +24,8 @@ module configurable_data_path #(
     input wire virreg_input_sel, // from instruction decoder
     output wire virreg_to_fmem_0, 
     output wire virreg_to_fmem_1,
-    input wire [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] feature_mem_read_data_0,
-    input wire [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] feature_mem_read_data_1,
+    input wire [Tn*FEATURE_WIDTH*KERNEL_SIZE - 1 : 0] feature_mem_read_data_0,
+    input wire [Tn*FEATURE_WIDTH*KERNEL_SIZE - 1 : 0] feature_mem_read_data_1,
     output wire shift_done_from_virreg,
 
     input wire [Tn*KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH-1 : 0] weight_wire,
@@ -63,7 +63,7 @@ reg [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_data_reg;
 wire [Tm*FEATURE_WIDTH - 1 : 0] tm_scaled_feature;
 wire [Tm*16-1 : 0] scaler_reg;
 
-virtical_reg i_virtical_reg(
+vertical_reg i_vertical_reg(
     .clk(clk),
     .rst(rst),
     .com_type(),
@@ -140,6 +140,7 @@ always@(posedge clk)begin
         endcase
       end
 end
+
 always@(posedge clk)begin
   if(rst) begin
     sel_array_enable <= 1'b0;
