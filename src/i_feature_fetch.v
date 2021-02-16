@@ -53,13 +53,15 @@ always@(posedge clk) begin
         else begin
             if (counter != 8'h00) begin // continue fetching
                 read_data <= 1'b1;
-                fetch_addr <= fetch_addr + 16'h0001;///////////// right?
-                wr_addr[3:0] <= (wr_addr[3:0] == 4'd4) ? 4'b0 : (wr_addr[3:0] + 4'b1);
-                wr_addr[7:4] <= (wr_addr[3:0] < 4'd4) ? wr_addr[7:4]
-                                  : (wr_addr[3:0] == 4'd4 && wr_addr[7:4] < 4'd3) ? wr_addr[7:4] + 1
-                                  : 4'b0;
-                wr_addr[14:8] <= 0;
-                i_mem_select <= (wr_addr[3:0] == 4'd4 && wr_addr[7:4] == 4'd3) ? i_mem_select + 1'b1 : i_mem_select;
+                fetch_addr <= fetch_addr + 16'h0001;
+                wr_addr <= wr_addr;
+                i_mem_select <= i_mem_select;
+                //wr_addr[3:0] <= (wr_addr[3:0] == 4'd4) ? 4'b0 : (wr_addr[3:0] + 4'b1);
+                //wr_addr[7:4] <= (wr_addr[3:0] < 4'd4) ? wr_addr[7:4]
+                //                  : (wr_addr[3:0] == 4'd4 && wr_addr[7:4] < 4'd3) ? wr_addr[7:4] + 1
+                //                  : 4'b0;
+                //wr_addr[14:8] <= 0;
+                //i_mem_select <= (wr_addr[3:0] == 4'd4 && wr_addr[7:4] == 4'd3) ? i_mem_select + 1'b1 : i_mem_select;
                 wr_en <= 1'b1;
                 counter <= counter - 1; 
 
@@ -141,12 +143,15 @@ always@(posedge clk) begin
         rd_en <= 1'b0;
         rd_addr <= 32'h0;
         wr_addr_tmp <= 8'h00;
+        counter <= 8'h00; 
+        wr_cs_weight_tmp <= 1'b0;
+        wr_cs_scaler_tmp <= 1'b0;
     end else begin
         // if (weight_fetch_enable | scaler_fetch_enable) begin
         if (weight_fetch_enable | scaler_fetch_enable) begin            
             rd_en <= 1'b1;
             rd_addr <= src_addr + WEIGHT_ADDR_OFFSET;
-            wr_addr_tmp <= dst_addr;////right???
+            wr_addr_tmp <= dst_addr;
             counter <= (fetch_counter == 8'b0) ? 8'b0 : (fetch_counter - 1);
             wr_cs_weight_tmp <= (weight_fetch_enable) ? 1'b1 : 1'b0;
             wr_cs_scaler_tmp <= (scaler_fetch_enable) ? 1'b1 : 1'b0;
