@@ -53,13 +53,15 @@ always@(posedge clk) begin
         else begin
             if (counter != 8'h00) begin // continue fetching
                 read_data <= 1'b1;
-                fetch_addr <= fetch_addr + 16'h0001;///////////// right?
-                wr_addr[3:0] <= (wr_addr[3:0] == 4'd4) ? 4'b0 : (wr_addr[3:0] + 4'b1);
-                wr_addr[7:4] <= (wr_addr[3:0] < 4'd4) ? wr_addr[7:4]
-                                  : (wr_addr[3:0] == 4'd4 && wr_addr[7:4] < 4'd3) ? wr_addr[7:4] + 1
-                                  : 4'b0;
-                wr_addr[14:8] <= 0;
-                i_mem_select <= (wr_addr[3:0] == 4'd4 && wr_addr[7:4] == 4'd3) ? i_mem_select + 1'b1 : i_mem_select;
+                fetch_addr <= fetch_addr + 16'h0001;
+                wr_addr <= wr_addr;
+                i_mem_select <= i_mem_select;
+                //wr_addr[3:0] <= (wr_addr[3:0] == 4'd4) ? 4'b0 : (wr_addr[3:0] + 4'b1);
+                //wr_addr[7:4] <= (wr_addr[3:0] < 4'd4) ? wr_addr[7:4]
+                //                  : (wr_addr[3:0] == 4'd4 && wr_addr[7:4] < 4'd3) ? wr_addr[7:4] + 1
+                //                  : 4'b0;
+                //wr_addr[14:8] <= 0;
+                //i_mem_select <= (wr_addr[3:0] == 4'd4 && wr_addr[7:4] == 4'd3) ? i_mem_select + 1'b1 : i_mem_select;
                 wr_en <= 1'b1;
                 counter <= counter - 1; 
 
@@ -107,30 +109,31 @@ module i_weight_fetch #(
     input [15:0] src_addr, // this will be defined by the parser, 
                                 // which is the relative address of the weight data
     input [7:0]  dst_addr, // select destination buffer, optional for now
-
     // weight data input from DDR interface group
     input wire [63:0] w_data,
+    input [7:0]  fetch_counter,
     output reg [31:0] rd_addr,
     output reg rd_en,
 
     // weight data output to on-chip buffer group
     output reg [7:0] wr_addr,
     output reg [63:0] wr_data,
-    output wire wr_en,
-    output wire wr_cs_weight,
-    output wire wr_cs_scaler,
+    output reg wr_en,
+    output reg wr_cs_weight,
+    output reg wr_cs_scaler,
 
     output reg fetch_done  // execution ACK
 );
 
 reg [7:0] wr_addr_tmp;
+reg [7:0] counter;
 
 always@(posedge clk) begin
     if(rst) begin
         wr_addr <= 8'h00;
     end
     else begin
-        wr_addr_tmp <= dst_addr;
+        //wr_addr_tmp <= dst_addr;
         wr_addr <= wr_addr_tmp;
     end
 end
@@ -138,45 +141,93 @@ end
 always@(posedge clk) begin
     if(rst) begin
         rd_en <= 1'b0;
-        rd_addr <= 16'h0000;
+        rd_addr <= 32'h0;
+        wr_addr_tmp <= 8'h00;
+        counter <= 8'h00; 
+        wr_cs_weight_tmp <= 1'b0;
+        wr_cs_scaler_tmp <= 1'b0;
     end else begin
         // if (weight_fetch_enable | scaler_fetch_enable) begin
         if (weight_fetch_enable | scaler_fetch_enable) begin            
             rd_en <= 1'b1;
             rd_addr <= src_addr + WEIGHT_ADDR_OFFSET;
+            wr_addr_tmp <= dst_addr;
+            counter <= (fetch_counter == 8'b0) ? 8'b0 : (fetch_counter - 1);
+            wr_cs_weight_tmp <= (weight_fetch_enable) ? 1'b1 : 1'b0;
+            wr_cs_scaler_tmp <= (scaler_fetch_enable) ? 1'b1 : 1'b0;
         end
         else begin
-            rd_en <= 1'b0;
-            rd_addr <= 16'h0000;
+            if (counter != 8'h00) begin
+                rd_en <= 1'b1;
+                rd_addr <= rd_addr + 1;
+                wr_addr_tmp <= wr_addr_tmp + 1;
+                counter <= counter - 1; 
+                wr_cs_weight_tmp <= wr_cs_weight_tmp;
+                wr_cs_scaler_tmp <= wr_cs_scaler_tmp;
+            end
+            else begin
+                rd_en <= 1'b0;
+                rd_addr <= 16'h0000;
+                wr_addr_tmp <= 8'h00;
+                counter <= 8'h00; 
+                wr_cs_weight_tmp <= 1'b0;
+                wr_cs_scaler_tmp <= 1'b0;
+            end
         end
     end
 end
+
 
 reg weight_fetch_flag;
 reg weight_fetch_tmp;
 reg scaler_fetch_flag;
 reg scaler_fetch_tmp;
 
-always@(posedge clk) begin
-    weight_fetch_tmp <= weight_fetch_enable;
-    weight_fetch_flag <= weight_fetch_tmp;
-    fetch_done <= weight_fetch_flag; // TODO: improve with data ensure mechanism, make sure the feature data is access with ack signal
-    scaler_fetch_tmp <= scaler_fetch_enable;
-    scaler_fetch_flag <= scaler_fetch_tmp;    
+//always@(posedge clk) begin
+//    weight_fetch_tmp <= weight_fetch_enable;
+//    weight_fetch_flag <= weight_fetch_tmp;
+//    fetch_done <= weight_fetch_flag; // TODO: improve with data ensure mechanism, make sure the feature data is access with ack signal
+//    scaler_fetch_tmp <= scaler_fetch_enable;
+//    scaler_fetch_flag <= scaler_fetch_tmp;    
+//end
+
+reg fetch_tmp;
+reg fetch_tmp_2;
+reg wr_cs_scaler_tmp;
+reg wr_cs_weight_tmp;
+
+
+always @(posedge clk) begin
+    if(rst) begin
+        fetch_tmp <= 0;
+        fetch_tmp_2 <= 0;
+        fetch_done <= 0;
+        wr_en <= 0;
+    end else begin
+        fetch_tmp <= (fetch_en || counter == 1);
+        fetch_tmp_2 <= (fetch_tmp && counter == 0);
+        fetch_done <= fetch_tmp_2;
+        wr_en <= rd_en;
+    end
 end
 
-// assign wr_data = w_data;
 always@(posedge clk) begin
     if(rst)begin
         wr_data <= 64'h0;
+        wr_cs_scaler <= 0;
+        wr_cs_weight <= 0;
     end
     else begin
         wr_data <= w_data;
+        wr_cs_scaler <= wr_cs_scaler_tmp;
+        wr_cs_weight <= wr_cs_weight_tmp;
     end
 end
 
-assign wr_en = weight_fetch_flag | scaler_fetch_flag;
-assign wr_cs_scaler = scaler_fetch_flag;
-assign wr_cs_weight = weight_fetch_flag;
+wire fetch_en;
+//assign wr_data = w_data;
+assign fetch_en = weight_fetch_enable | scaler_fetch_enable;
+
+
 
 endmodule

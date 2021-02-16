@@ -358,6 +358,7 @@ i_weight_fetch weight_fetcher(
     .fetch_type(fetch_type),
     .src_addr(src_addr),
     .dst_addr(dst_addr),
+    .fetch_counter(fetch_counter),
     .w_data(i_w_bus_port),
     .rd_addr(i_w_addr),
     .rd_en(i_w_enable),
