@@ -41,7 +41,7 @@ generate
     for (i = 0; i < `Tn; i = i+1) begin
         dp_ram #(16, 4, 64) w_buffer(
             .clk(clk),
-            .ena(ram_select[i]),
+            .ena(ram_select[i] & ena),
             .enb(enb),
             .wea(ram_select[i] & wea),
             .addra(addra[ADDR_WIDTH -1 : 0]),
