@@ -117,7 +117,7 @@ always@(posedge clk)begin
     end
     else begin
       case(com_type_reg)
-        8'h01: begin //CONV
+        8'h01: begin //CONV = select_array -> kernel adder tree -> channel adder tree -> scaler_mult => single output
             if(feature_ready_flag)begin
               weight_addr <= out_channel_counter;
               weight_read_en <= 1'b1;
@@ -128,10 +128,10 @@ always@(posedge clk)begin
               out_channel_counter <=0;
             end
         end
-        8'h02: begin // DWCONV
+        8'h02: begin // DWCONV => select array -> kernel adder tree -> scaler_mult => Tn output
             weight_read_en <= 1'b0;
         end
-        8'h04: begin // PWCONV
+        8'h04: begin // PWCONV => select array -> channel adder tree -> scaler_mult => single output
             weight_read_en <= 1'b0;
         end
         default: begin
