@@ -189,7 +189,7 @@ adder_2Nin_Nout #(.FEATURE_WIDTH(`FEATURE_WIDTH), .CHANNEL_NUM(4)) adder_8_in_4_
     .fast_clk(fast_clk),
     .rst(rst),
     .A_INPUT(adder_row_1_output[4*FEATURE_WIDTH - 1 : 0]),
-    .B_INPUT(adder_row_1_output[8*FEATURE_WIDTH - 1 : 0]),
+    .B_INPUT(adder_row_1_output[8*FEATURE_WIDTH - 1 : 4*FEATURE_WIDTH]),
     .O_OUTPUT(adder_row_2_output)
 );
 

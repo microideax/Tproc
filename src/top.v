@@ -372,7 +372,7 @@ i_weight_fetch weight_fetcher(
 
 wire clp_to_weight_buffer_enable;
 wire [15:0] clp_to_weight_buffer_addr;
-wire [Tn*KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH-1 : 0] weight_wire;
+wire [Tn*64 - 1 : 0] weight_wire;
 weight_buffer_array #(16, 4, 64, 3) weight_buffer(
     .clk(clk),
     .ena(wr_cs_weight),
@@ -418,6 +418,19 @@ syn_fifo instruction_mem(
 );
 */
 
+wire [Tn*KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH - 1:0] weight_wire_CLP;
+genvar i;
+generate
+  for (i = 0; i < Tn; i = i+1) begin
+    assign weight_wire_CLP[(i+1)*KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH - 1 : i*KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH] = weight_wire[i*64 + KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH - 1 : i*64];
+  end
+endgenerate
+//assign weight_wire_CLP = {weight_wire[3*64 + KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH - 1 : 3*64],
+//                          weight_wire[2*64 + KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH - 1 : 2*64],
+//                          weight_wire[1*64 + KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH - 1 : 1*64],
+//                          weight_wire[0*64 + KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH - 1 : 0*64]
+//                          };
+
 configurable_data_path #(
     .Tn(Tn),
     .FEATURE_WIDTH(FEATURE_WIDTH), 
@@ -442,7 +455,7 @@ configurable_data_path #(
         .feature_mem_read_data_1(feature_mem_read_data_1),
         .shift_done_from_virreg(shift_done_from_virreg),
 
-        .weight_wire(weight_wire),
+        .weight_wire(weight_wire_CLP),
         .weight_addr(clp_to_weight_buffer_addr),
         .weight_read_en(clp_to_weight_buffer_enable),
 
