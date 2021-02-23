@@ -1,4 +1,10 @@
 // virtical_reg used to buffer the input data for the select_array 
+//time sequence charts
+/*
+CLK         0       1       2   3
+SIGNAL      enable  shift0  
+*/
+
 
 `include "network_para.vh"
 
@@ -9,8 +15,8 @@ module vertical_reg #(
     parameter FEATURE_WIDTH = `FEATURE_WIDTH,
     parameter KERNEL_width = `KERNEL_SIZE
 )(
-    input clk,
-    input rst,
+    input wire clk,
+    input wire rst,
     input wire [3:0] com_type,
     input wire [7:0] kernel_size,
     input wire enable,
@@ -23,41 +29,129 @@ module vertical_reg #(
     output wire shift_done
 );
 
-reg [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] d_temp_0;
-reg [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] d_temp_1;
+reg [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] d_temp;
 
-reg shift_enable_reg, shift_enable, vir_reg_done;
+reg [KERNEL_SIZE-2 : 0] counter;
+reg shift_done_flag, vir_reg_done, d_temp_select_0_tmp, d_temp_select_1_tmp, d_temp_select_0, d_temp_select_1;
+wire enable_flag, counter_empty_n;
+
+always @(posedge clk or posedge rst) begin
+    if(rst) begin
+        counter <= 0;
+    end else begin
+        counter <= {counter[KERNEL_SIZE-3 : 0], enable};
+    end
+end
+
+assign counter_empty_n = |counter;
+assign enable_flag = counter_empty_n | enable;
+
 
 always@(posedge clk) begin
     if(rst) begin
         feature_en_0 <= 0;
         feature_en_1 <= 0;
-        shift_enable_reg <= 0;
-        shift_enable <= 0;
+        //d_temp_select_0_tmp <= 0;
+        //d_temp_select_1_tmp <= 0;
+        d_temp_select_0 <= 0;
+        d_temp_select_1 <= 0;
+        shift_done_flag <= 0;
         vir_reg_done <= 0;
     end
     else begin
-        feature_en_0 <= enable & ~in_select;
-        feature_en_1 <= enable & in_select;
-        shift_enable_reg <= enable;
-        shift_enable <= shift_enable_reg;
-        vir_reg_done <= shift_enable;
+        feature_en_0 <= (enable & ~in_select) | (feature_en_0 & counter_empty_n);
+        feature_en_1 <= (enable & in_select) | ((feature_en_1 & counter_empty_n));
+        //d_temp_select_0_tmp <= enable & ~in_select;
+        //d_temp_select_1_tmp <= enable & in_select;
+        d_temp_select_0 <= feature_en_0;
+        d_temp_select_1 <= feature_en_1;
+        shift_done_flag <= (feature_en_0 | feature_en_1) & (~enable_flag);
+        vir_reg_done <= shift_done_flag;
     end
 end
 
 assign shift_done = vir_reg_done;
 
-always@(posedge clk) begin
-    if (shift_enable) begin
-        d_temp_0[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] <= {d_temp_0[Tn*KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], dia_0};
-        d_temp_1[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] <= {d_temp_1[Tn*KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], dia_1};
+//always@(posedge clk) begin
+//    if (feature_en_0|feature_en_1) begin
+//        d_temp_0[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] <= {d_temp_0[Tn*KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], dia_0};
+//        d_temp_1[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] <= {d_temp_1[Tn*KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], dia_1};
+//    end
+//    else begin
+//        d_temp_0 <= d_temp_0;
+//        d_temp_1 <= d_temp_1;
+//    end
+//end
+//
+//assign doa[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] = vir_reg_done ? d_temp_1[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] : d_temp_0[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0];
+
+always@(posedge clk or posedge rst) begin
+    if (rst) begin
+        d_temp <= 0;
     end
     else begin
-        d_temp_0 <= d_temp_0;
-        d_temp_1 <= d_temp_1;
+        d_temp <= (d_temp_select_0 == 1) ? {d_temp[Tn*KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], dia_0}
+                : (d_temp_select_1 == 1) ? {d_temp[Tn*KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], dia_1}
+                : d_temp;
     end
 end
 
-assign doa[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] = vir_reg_done ? d_temp_1[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] : d_temp_0[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0];
+assign doa = d_temp;
+
+endmodule
+
+
+
+module vertical_reg_weight #(
+    parameter Tn = `Tn,
+    parameter KERNEL_SIZE = `KERNEL_SIZE,
+    parameter KERNEL_WIDTH = `KERNEL_WIDTH,
+    parameter FEATURE_WIDTH = `FEATURE_WIDTH,
+    parameter KERNEL_width = `KERNEL_SIZE
+)(
+    input clk,
+    input rst,
+    input wire [Tn * KERNEL_SIZE * KERNEL_SIZE * KERNEL_WIDTH - 1 : 0 ] weight_in,
+    output wire [Tn * KERNEL_SIZE * KERNEL_SIZE * KERNEL_WIDTH - 1 : 0 ] weight_out
+);
+
+wire [KERNEL_WIDTH - 1 : 0] weight_in_wire [Tn * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
+wire [KERNEL_WIDTH - 1 : 0] weight_out_wire [Tn * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
+
+genvar i;
+generate
+    for(i = 0; i < Tn * KERNEL_SIZE * KERNEL_SIZE; i = i+1) begin: weight_vertical_reg
+        assign weight_in_wire[i] = weight_in[(i+1)*KERNEL_WIDTH-1:i*KERNEL_WIDTH];
+        assign weight_out_wire[i] = weight_in_wire[25*(i/5%4) + 5*(i%5) + i/20];
+        assign weight_out[(i+1)*KERNEL_WIDTH-1 : i*KERNEL_WIDTH] = weight_out_wire[i];
+    end
+endgenerate
+
+endmodule
+
+module reorder_feature #(
+    parameter Tn = `Tn,
+    parameter KERNEL_SIZE = `KERNEL_SIZE,
+    parameter KERNEL_WIDTH = `KERNEL_WIDTH,
+    parameter FEATURE_WIDTH = `FEATURE_WIDTH,
+    parameter KERNEL_width = `KERNEL_SIZE
+)(
+    input clk,
+    input rst,
+    input wire [Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0 ] feature_in,
+    output wire [Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0 ] feature_out
+);
+
+wire [FEATURE_WIDTH - 1 : 0] feature_in_wire [Tn * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
+wire [FEATURE_WIDTH - 1 : 0] feature_out_wire [Tn * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
+
+genvar i;
+generate
+    for(i = 0; i < Tn * KERNEL_SIZE * KERNEL_SIZE; i = i+1) begin: feature_vertical_reg
+        assign feature_in_wire[i] = feature_in[(i+1)*FEATURE_WIDTH-1:i*FEATURE_WIDTH];
+        assign feature_out_wire[i] = feature_in_wire[(i%25/5) + 5 * (i/25) + 20 * (i%5)];
+        assign feature_out[(i+1)*FEATURE_WIDTH-1 : i*FEATURE_WIDTH] = feature_out_wire[i];
+    end
+endgenerate
 
 endmodule

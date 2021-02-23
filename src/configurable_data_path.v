@@ -107,6 +107,29 @@ always@(posedge clk) begin
       end    
   end
 end
+/*
+wire [Tn*KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH-1 : 0] weight_vertical_wire;
+
+vertical_reg_weight vertical_reg_weight(
+  .clk       (clk),
+  .rst       (rst),
+  .weight_in (weight_wire),
+  .weight_out(weight_vertical_wire)
+);
+*/
+
+
+wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] reorder_feature;
+wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] reorder_feature_in;
+
+assign reorder_feature_in = virtical_data_reg;
+
+reorder_feature reorder_feature_1(
+  .clk        (clk),
+  .rst        (rst),
+  .feature_in (reorder_feature_in),
+  .feature_out(reorder_feature)
+);
 
 
 reg sel_array_enable;
@@ -154,10 +177,10 @@ wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] ternary_com_out;
 TnKK_select_array ternary_com_array(
     .clk(clk),
     .rst(rst),
-    .feature_in(virtical_data_reg),
+    .feature_in(reorder_feature),
     .weight_in(weight_wire),
     .enable(sel_array_enable),
-    .temp_feature_out(ternary_com_out)
+    .feature_out(ternary_com_out)
 );
 
 wire [Tn*FEATURE_WIDTH - 1 : 0] tn_kernel_out;
