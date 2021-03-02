@@ -138,7 +138,7 @@ always@(posedge clk) begin
                 fetch_counter <= reg_7;
                 com_type <= 8'h00;
             end
-            8'h81: begin
+            8'h81: begin//CONV
                 com_type <= 8'h01;
                 config_enable <= 1'b1;
                 current_kernel_size <= reg_3;
@@ -152,6 +152,7 @@ always@(posedge clk) begin
                 vreg_input_select <= reg_2[0];
                 com_type <= 8'h00;
                 config_enable <= 1'b0;
+                line_buffer_mod <= reg_3[0]; //ruidi 25/2/2021
             end
             8'h82: begin
                 $display("Null instruction!!!");

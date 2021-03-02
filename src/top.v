@@ -157,7 +157,7 @@ wire fetch_done_from_i;
 wire fetch_done_from_w;
 wire shift_done_from_virreg;
 
-assign fetch_done_wire = fetch_done_from_i | fetch_done_from_w | shift_done_from_virreg | test_exe_done;
+assign fetch_done_wire = fetch_done_from_i | fetch_done_from_w | shift_done_from_virreg | test_exe_done | compute_done;
 
 wire [3:0] current_kernel_size;
 wire [7:0] com_type_wire;
@@ -390,7 +390,7 @@ weight_buffer_array #(16, 4, 64, 3) weight_buffer(
 // wire s_wr_en;
 wire [63:0] scaler_data;
 wire scaler_buffer_rd_en;
-syn_fifo_dpram #(.DATA_WIDTH(64), .ADDR_WIDTH(4), .RAM_DEPTH(15)) scaler_buffer(
+syn_fifo_dpram #(.DATA_WIDTH(64), .ADDR_WIDTH(8), .RAM_DEPTH(256)) scaler_buffer(
     .clk(clk),
     .rst(rst),
     .wr_cs(wr_cs_scaler),
@@ -447,6 +447,7 @@ configurable_data_path #(
         .com_type(com_type_wire),
         .kernel_size(current_kernel_size),
     
+        .vertical_shift_mod(line_buffer_mod),
         .virtical_reg_shift(virtical_reg_shift),
         .virreg_input_sel(virreg_input_sel),
         .virreg_to_fmem_0(virreg_to_fmem_0),
@@ -461,7 +462,9 @@ configurable_data_path #(
 
         .scaler_data(scaler_data),
         .scaler_buffer_rd_en(scaler_buffer_rd_en),
-        .scaled_feature_output(scaled_feature)
+        .scaled_feature_output(scaled_feature),
+
+        .compute_done(compute_done)
 );
 
 

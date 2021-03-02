@@ -49,9 +49,9 @@ wire i_instr_rd_en;
 
 
 // instanciate test memory sapce for feature data and instruction data
-reg [127:0] test_feature_storage [31:0];
-reg [63:0]  test_weight_storage [63:0];
-reg [63:0] test_instruction_storage [127:0];
+reg [127:0] test_feature_storage [1023:0];
+reg [63:0]  test_weight_storage [4096:0];
+reg [63:0] test_instruction_storage [8191:0];
 
 // reg [ Tn * Tm * KERNEL_SIZE * KERNEL_SIZE * KERNEL_WIDTH - 1 : 0 ]  weight_wire;
 // reg [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_reg_to_select_array;

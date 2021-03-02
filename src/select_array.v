@@ -16,7 +16,8 @@ module TnKK_select_array#(
     input wire [Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0] feature_in,
     input wire [Tn * KERNEL_SIZE * KERNEL_SIZE * KERNEL_WIDTH - 1 : 0 ]    weight_in,
     input wire enable,
-    output reg [Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0] feature_out
+    output reg [Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0] feature_out,
+    output reg ternary_com_done
 );
 
 wire [Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0] temp_feature_out;
@@ -42,8 +43,10 @@ endgenerate
 always @(posedge clk or posedge rst) begin
     if(rst) begin
         feature_out <= 0;
+        ternary_com_done <= 0;
     end else begin
         feature_out <= (enable) ? temp_feature_out : 0;
+        ternary_com_done <= enable;
     end
 end
 

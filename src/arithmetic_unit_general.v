@@ -221,11 +221,12 @@ module adder_tree_Tn_kernel #(
 );
 
 
-wire lat_1_enable, lat_2_enable, lat_3_enable, lat_4_enable;
+wire lat_1_enable, lat_2_enable, lat_3_enable, lat_4_enable, lat_5_enable;
 register_x1 #(.FEATURE_WIDTH(1)) lat_1(.clk(fast_clk), .rst(rst), .in_data(enable), .o_data(lat_1_enable));
 register_x1 #(.FEATURE_WIDTH(1)) lat_2(.clk(fast_clk), .rst(rst), .in_data(lat_1_enable), .o_data(lat_2_enable));
 register_x1 #(.FEATURE_WIDTH(1)) lat_3(.clk(fast_clk), .rst(rst), .in_data(lat_2_enable), .o_data(lat_3_enable));
 register_x1 #(.FEATURE_WIDTH(1)) lat_4(.clk(fast_clk), .rst(rst), .in_data(lat_3_enable), .o_data(lat_4_enable));
+register_x1 #(.FEATURE_WIDTH(1)) lat_5(.clk(fast_clk), .rst(rst), .in_data(lat_4_enable), .o_data(lat_5_enable));
 assign adder_done = lat_4_enable;
 
 
