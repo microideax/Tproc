@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tb_top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="tb_top" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="6319444445fs"></ZoomEndTime>
+      <Cursor1Time time="5000000000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="164"></NameColumnWidth>
+      <ValueColumnWidth column_width="94"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="11" />
+   <wvobject fp_name="/tb_top/mytest/CLP/kernel_adder_tree/\genblk1[0].kernel_adder /fast_clk" type="logic">
+      <obj_property name="ElementShortName">fast_clk</obj_property>
+      <obj_property name="ObjectShortName">fast_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/kernel_adder_tree/\genblk1[0].kernel_adder /rst" type="logic">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/kernel_adder_tree/\genblk1[0].kernel_adder /ternery_res" type="array">
+      <obj_property name="ElementShortName">ternery_res[399:0]</obj_property>
+      <obj_property name="ObjectShortName">ternery_res[399:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/kernel_adder_tree/\genblk1[0].kernel_adder /kernel_sum" type="array">
+      <obj_property name="ElementShortName">kernel_sum[15:0]</obj_property>
+      <obj_property name="ObjectShortName">kernel_sum[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/kernel_adder_tree/\genblk1[0].kernel_adder /adder_row_0_output" type="array">
+      <obj_property name="ElementShortName">adder_row_0_output[207:0]</obj_property>
+      <obj_property name="ObjectShortName">adder_row_0_output[207:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/kernel_adder_tree/\genblk1[0].kernel_adder /adder_row_1_input" type="array">
+      <obj_property name="ElementShortName">adder_row_1_input[255:0]</obj_property>
+      <obj_property name="ObjectShortName">adder_row_1_input[255:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/kernel_adder_tree/\genblk1[0].kernel_adder /adder_row_1_output" type="array">
+      <obj_property name="ElementShortName">adder_row_1_output[127:0]</obj_property>
+      <obj_property name="ObjectShortName">adder_row_1_output[127:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/kernel_adder_tree/\genblk1[0].kernel_adder /adder_row_2_output" type="array">
+      <obj_property name="ElementShortName">adder_row_2_output[127:0]</obj_property>
+      <obj_property name="ObjectShortName">adder_row_2_output[127:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/kernel_adder_tree/\genblk1[0].kernel_adder /FEATURE_WIDTH" type="array">
+      <obj_property name="ElementShortName">FEATURE_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">FEATURE_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/kernel_adder_tree/\genblk1[0].kernel_adder /KERNEL_SIZE" type="array">
+      <obj_property name="ElementShortName">KERNEL_SIZE[31:0]</obj_property>
+      <obj_property name="ObjectShortName">KERNEL_SIZE[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/kernel_adder_tree/\genblk1[0].kernel_adder /ADDER_ROW" type="array">
+      <obj_property name="ElementShortName">ADDER_ROW[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ADDER_ROW[31:0]</obj_property>
+   </wvobject>
+</wave_config>

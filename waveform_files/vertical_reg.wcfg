@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tb_top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="tb_top" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="1135082000fs"></ZoomStartTime>
+      <ZoomEndTime time="1336282001fs"></ZoomEndTime>
+      <Cursor1Time time="1225000000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="86"></NameColumnWidth>
+      <ValueColumnWidth column_width="58"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="27" />
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/clk" type="logic">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/rst" type="logic">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/com_type" type="array">
+      <obj_property name="ElementShortName">com_type[3:0]</obj_property>
+      <obj_property name="ObjectShortName">com_type[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/kernel_size" type="array">
+      <obj_property name="ElementShortName">kernel_size[7:0]</obj_property>
+      <obj_property name="ObjectShortName">kernel_size[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/enable" type="logic">
+      <obj_property name="ElementShortName">enable</obj_property>
+      <obj_property name="ObjectShortName">enable</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/in_select" type="logic">
+      <obj_property name="ElementShortName">in_select</obj_property>
+      <obj_property name="ObjectShortName">in_select</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/feature_en_0" type="logic">
+      <obj_property name="ElementShortName">feature_en_0</obj_property>
+      <obj_property name="ObjectShortName">feature_en_0</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/feature_en_1" type="logic">
+      <obj_property name="ElementShortName">feature_en_1</obj_property>
+      <obj_property name="ObjectShortName">feature_en_1</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/dia_0" type="array">
+      <obj_property name="ElementShortName">dia_0[319:0]</obj_property>
+      <obj_property name="ObjectShortName">dia_0[319:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/dia_1" type="array">
+      <obj_property name="ElementShortName">dia_1[319:0]</obj_property>
+      <obj_property name="ObjectShortName">dia_1[319:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/doa" type="array">
+      <obj_property name="ElementShortName">doa[1599:0]</obj_property>
+      <obj_property name="ObjectShortName">doa[1599:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/shift_done" type="logic">
+      <obj_property name="ElementShortName">shift_done</obj_property>
+      <obj_property name="ObjectShortName">shift_done</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/d_temp" type="array">
+      <obj_property name="ElementShortName">d_temp[1599:0]</obj_property>
+      <obj_property name="ObjectShortName">d_temp[1599:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/counter" type="array">
+      <obj_property name="ElementShortName">counter[3:0]</obj_property>
+      <obj_property name="ObjectShortName">counter[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/shift_done_flag" type="logic">
+      <obj_property name="ElementShortName">shift_done_flag</obj_property>
+      <obj_property name="ObjectShortName">shift_done_flag</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/vir_reg_done" type="logic">
+      <obj_property name="ElementShortName">vir_reg_done</obj_property>
+      <obj_property name="ObjectShortName">vir_reg_done</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/d_temp_select_0_tmp" type="logic">
+      <obj_property name="ElementShortName">d_temp_select_0_tmp</obj_property>
+      <obj_property name="ObjectShortName">d_temp_select_0_tmp</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/d_temp_select_1_tmp" type="logic">
+      <obj_property name="ElementShortName">d_temp_select_1_tmp</obj_property>
+      <obj_property name="ObjectShortName">d_temp_select_1_tmp</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/d_temp_select_0" type="logic">
+      <obj_property name="ElementShortName">d_temp_select_0</obj_property>
+      <obj_property name="ObjectShortName">d_temp_select_0</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/d_temp_select_1" type="logic">
+      <obj_property name="ElementShortName">d_temp_select_1</obj_property>
+      <obj_property name="ObjectShortName">d_temp_select_1</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/enable_flag" type="logic">
+      <obj_property name="ElementShortName">enable_flag</obj_property>
+      <obj_property name="ObjectShortName">enable_flag</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/counter_empty_n" type="logic">
+      <obj_property name="ElementShortName">counter_empty_n</obj_property>
+      <obj_property name="ObjectShortName">counter_empty_n</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/Tn" type="array">
+      <obj_property name="ElementShortName">Tn[31:0]</obj_property>
+      <obj_property name="ObjectShortName">Tn[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/KERNEL_SIZE" type="array">
+      <obj_property name="ElementShortName">KERNEL_SIZE[31:0]</obj_property>
+      <obj_property name="ObjectShortName">KERNEL_SIZE[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/KERNEL_WIDTH" type="array">
+      <obj_property name="ElementShortName">KERNEL_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">KERNEL_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/FEATURE_WIDTH" type="array">
+      <obj_property name="ElementShortName">FEATURE_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">FEATURE_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_top/mytest/CLP/i_vertical_reg/KERNEL_width" type="array">
+      <obj_property name="ElementShortName">KERNEL_width[31:0]</obj_property>
+      <obj_property name="ObjectShortName">KERNEL_width[31:0]</obj_property>
+   </wvobject>
+</wave_config>
