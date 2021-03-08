@@ -16,10 +16,11 @@ module configurable_data_path #(
     input wire rst,
 
     input wire config_enable,
-    input wire config_clear,
+    input wire config_clear,//temporally replaced by conv_done
     input wire [7:0] com_type,
     input wire [3:0] kernel_size,
 
+    input wire vertical_shift_mod,
     input wire virtical_reg_shift,
     input wire virreg_input_sel, // from instruction decoder
     output wire virreg_to_fmem_0, 
@@ -34,7 +35,9 @@ module configurable_data_path #(
     
     input wire [15 : 0] scaler_data,
     output wire scaler_buffer_rd_en,
-    output wire [Tm* FEATURE_WIDTH + SCALER_WIDTH-1 : 0] scaled_feature_output
+    output wire [Tm* FEATURE_WIDTH + SCALER_WIDTH-1 : 0] scaled_feature_output,
+
+    output wire compute_done
 );
 
 // wire shift_done_from_virreg;
@@ -48,12 +51,12 @@ always@(posedge clk) begin
   else begin
     if(config_enable)begin
       com_type_reg <= com_type;
-    end else if(config_clear) begin
+    end else if(conv_done) begin // use conv_done temporally
       com_type_reg <= 8'h00;
     end  else begin
       com_type_reg <= com_type_reg;
     end
-end
+  end
 end
 
 wire virreg_to_fmem_0;
@@ -68,6 +71,7 @@ vertical_reg i_vertical_reg(
     .rst(rst),
     .com_type(),
     .kernel_size(),
+    .shift_mod   (vertical_shift_mod),
     .enable(virtical_reg_shift),
     .in_select(virreg_input_sel),
     .feature_en_0(virreg_to_fmem_0),
@@ -118,7 +122,7 @@ vertical_reg_weight vertical_reg_weight(
 );
 */
 
-
+/*
 wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] reorder_feature;
 wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] reorder_feature_in;
 
@@ -129,7 +133,7 @@ reorder_feature reorder_feature_1(
   .rst        (rst),
   .feature_in (reorder_feature_in),
   .feature_out(reorder_feature)
-);
+);*/
 
 
 reg sel_array_enable;
@@ -174,13 +178,15 @@ always@(posedge clk)begin
 end
 
 wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] ternary_com_out;
+wire ternary_com_done;
 TnKK_select_array ternary_com_array(
     .clk(clk),
     .rst(rst),
-    .feature_in(reorder_feature),
+    .feature_in(virtical_reg_to_select_array),
     .weight_in(weight_wire),
     .enable(sel_array_enable),
-    .feature_out(ternary_com_out)
+    .feature_out(ternary_com_out),
+    .ternary_com_done(ternary_com_done)
 );
 
 wire [Tn*FEATURE_WIDTH - 1 : 0] tn_kernel_out;
@@ -188,7 +194,7 @@ wire tn_kernel_done;
 adder_tree_Tn_kernel kernel_adder_tree(
     .fast_clk(clk),
     .rst(rst),
-    .enable(sel_array_enable),
+    .enable(ternary_com_done),
     .ternery_res_tn(ternary_com_out),
     .kernel_sum_tn(tn_kernel_out),
     .adder_done(tn_kernel_done)
@@ -236,8 +242,8 @@ endgenerate
 */
 
 // assign scaled_feature_output[Tm*FEATURE_WIDTH-1 : 0] = tm_scaled_feature[Tm*FEATURE_WIDTH-1 : 0];
-reg [4:0] tm_buffer_sel_reg, reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6;
-always@(posedge clk)begin
+reg [4:0] tm_buffer_sel_reg, reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7;
+always@(posedge clk or posedge rst)begin
   if(rst) begin
     tm_buffer_sel_reg <= 0;
     reg_0 <= 0;
@@ -247,9 +253,11 @@ always@(posedge clk)begin
     reg_4 <= 0;
     reg_5 <= 0;
     reg_6 <= 0;
+    reg_7 <= 0;
   end
   else begin
-    tm_buffer_sel_reg <= reg_6;
+    tm_buffer_sel_reg <= reg_7;
+    reg_7 <= reg_6;
     reg_6 <= reg_5;
     reg_5 <= reg_4;
     reg_4 <= reg_3;
@@ -270,15 +278,32 @@ assign tm_wr_enable = 1 << tm_buffer_sel_reg;
 //   end
 // end
 
+reg conv_done;
+reg [15:0] enable_cnt;
+wire [15:0] tm_wr_addr;
+
+always @(posedge clk or posedge rst) begin : proc_
+  if(rst) begin
+    enable_cnt <= 0;
+    conv_done <= 0;
+  end else begin
+    enable_cnt <= config_enable ? (enable_cnt + 1) : enable_cnt;
+    conv_done <= tm_wr_enable[8] ? 1 : 0;
+  end
+end
+assign tm_wr_addr = enable_cnt - 1;
+assign compute_done = conv_done;
+
+
 genvar i;
 generate
   for(i=0; i<Tm; i=i+1)begin
-    dp_ram #(.RAM_DEPTH(), .ADDR_WIDTH(), .DATA_WIDTH()) tm_data_buffer(
+    dp_ram #(.RAM_DEPTH(1024), .ADDR_WIDTH(10), .DATA_WIDTH(FEATURE_WIDTH)) tm_data_buffer(
       .clk(clk),
       .ena(tm_wr_enable[i+1]),
       .enb(),
       .wea(tm_wr_enable[i+1]),
-      .addra(),
+      .addra(tm_wr_addr),
       .addrb(),
       .dia(scaled_feature),
       .dob()
@@ -286,4 +311,23 @@ generate
   end
 endgenerate
 
+/////////////////////////only for simulation/////////////////////////
+/*
+integer fp_w;
+reg [3:0] mem_count;
+initial begin
+
+  fp_w = $fopen("data_out.txt","w");
+  #1800;
+  for (mem_count = 0; mem_count < 8; mem_count = mem_count + 1) begin
+    $fdisplay(fp_w, "%d", scaled_feature);          //%h denotes hex
+    #10;
+  end
+
+  $fclose(fp_w);
+end
+*/
+
+
 endmodule
+

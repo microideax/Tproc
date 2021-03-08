@@ -1,10 +1,11 @@
 // virtical_reg used to buffer the input data for the select_array 
-//time sequence charts
-/*
-CLK         0       1       2   3
-SIGNAL      enable  shift0  
-*/
 
+/*
+vertical_reg_output format:
+addr:   0   1   2   3   4   5   6   ...  kernel_size^2+0 ... Tn*kernel_size^2-1 
+data:  a00 a10 a20 a30 a40 a01 a02  ...        b00       ...         d44
+a10: pixel value of group a, line 1, column 0
+*/
 
 `include "network_para.vh"
 
@@ -21,6 +22,7 @@ module vertical_reg #(
     input wire [7:0] kernel_size,
     input wire enable,
     input wire in_select,
+    input wire shift_mod,
     output reg feature_en_0,
     output reg feature_en_1,
     input wire [Tn*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] dia_0,
@@ -29,7 +31,7 @@ module vertical_reg #(
     output wire shift_done
 );
 
-reg [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] d_temp;
+wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] d_temp;
 
 reg [KERNEL_SIZE-2 : 0] counter;
 reg shift_done_flag, vir_reg_done, d_temp_select_0_tmp, d_temp_select_1_tmp, d_temp_select_0, d_temp_select_1;
@@ -39,7 +41,7 @@ always @(posedge clk or posedge rst) begin
     if(rst) begin
         counter <= 0;
     end else begin
-        counter <= {counter[KERNEL_SIZE-3 : 0], enable};
+        counter <= {counter[KERNEL_SIZE-3 : 0], (enable & (!shift_mod))};
     end
 end
 
@@ -85,24 +87,62 @@ assign shift_done = vir_reg_done;
 //
 //assign doa[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] = vir_reg_done ? d_temp_1[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] : d_temp_0[Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0];
 
-always@(posedge clk or posedge rst) begin
-    if (rst) begin
-        d_temp <= 0;
+
+genvar i;
+generate
+    for (i = 0; i < Tn; i = i + 1) begin
+        shift_reg i_shift_reg(
+            .clk            (clk),
+            .rst            (rst),
+            .d_temp_select_0(d_temp_select_0),
+            .d_temp_select_1(d_temp_select_1),
+            .sub_dia_0      (dia_0[(i+1)*KERNEL_SIZE*FEATURE_WIDTH - 1 : i*KERNEL_SIZE*FEATURE_WIDTH]),
+            .sub_dia_1      (dia_1[(i+1)*KERNEL_SIZE*FEATURE_WIDTH - 1 : i*KERNEL_SIZE*FEATURE_WIDTH]),
+            .sub_d_temp     (d_temp[(i+1)*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : i*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH])
+            );
     end
-    else begin
-        d_temp <= (d_temp_select_0 == 1) ? {d_temp[Tn*KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], dia_0}
-                : (d_temp_select_1 == 1) ? {d_temp[Tn*KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], dia_1}
-                : d_temp;
-    end
-end
+endgenerate
+
 
 assign doa = d_temp;
 
 endmodule
 
 
+module shift_reg #(
+    parameter Tn = `Tn,
+    parameter KERNEL_SIZE = `KERNEL_SIZE,
+    parameter KERNEL_WIDTH = `KERNEL_WIDTH,
+    parameter FEATURE_WIDTH = `FEATURE_WIDTH,
+    parameter KERNEL_width = `KERNEL_SIZE
+)(
+    input wire clk,
+    input wire rst,
+    input wire d_temp_select_0,
+    input wire d_temp_select_1,
+    input wire [KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] sub_dia_0,
+    input wire [KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] sub_dia_1,
+    output reg [KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] sub_d_temp
+);
 
-module vertical_reg_weight #(
+always@(posedge clk or posedge rst) begin
+    if (rst) begin
+        sub_d_temp <= 0;
+    end
+    else begin
+        sub_d_temp <= (d_temp_select_0 == 1) ? {sub_d_temp[KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], sub_dia_0}
+                    : (d_temp_select_1 == 1) ? {sub_d_temp[KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], sub_dia_1}
+                    : sub_d_temp;
+    end
+end  
+
+endmodule
+
+
+
+
+
+module reorder_weight #(
     parameter Tn = `Tn,
     parameter KERNEL_SIZE = `KERNEL_SIZE,
     parameter KERNEL_WIDTH = `KERNEL_WIDTH,
@@ -155,3 +195,5 @@ generate
 endgenerate
 
 endmodule
+
+
