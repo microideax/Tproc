@@ -59,7 +59,24 @@ always@(posedge clk) begin
 end
 endmodule
 
-
+module adder_2in_1out #(
+    parameter FEATURE_WIDTH = `FEATURE_WIDTH
+) (
+    input wire clk,
+    input wire rst,
+    input wire [FEATURE_WIDTH-1 : 0] A1,
+    input wire [FEATURE_WIDTH-1 : 0] B1,
+    output reg [FEATURE_WIDTH-1 : 0] O
+);
+always@(posedge clk) begin
+    if(rst) begin
+        O <= 0;
+    end
+    else begin
+        O <= A1 + B1;
+    end
+end
+endmodule
 
 module adder_2Nin_Nout #(
     parameter FEATURE_WIDTH = `FEATURE_WIDTH,

@@ -105,13 +105,14 @@ module i_weight_fetch #(
     // instruction interface group
     input weight_fetch_enable,
     input scaler_fetch_enable,
+    input bias_fetch_enable,
     input [7:0] fetch_type,
     input [15:0] src_addr, // this will be defined by the parser, 
                                 // which is the relative address of the weight data
     input [7:0]  dst_addr, // select destination buffer, optional for now
     // weight data input from DDR interface group
     input wire [63:0] w_data,
-    input [7:0]  fetch_counter,
+    input wire [7:0] fetch_counter,
     output reg [31:0] rd_addr,
     output reg rd_en,
 
@@ -121,6 +122,7 @@ module i_weight_fetch #(
     output reg wr_en,
     output reg wr_cs_weight,
     output reg wr_cs_scaler,
+    output reg wr_cs_bias,
 
     output reg fetch_done  // execution ACK
 );
@@ -146,15 +148,16 @@ always@(posedge clk) begin
         counter <= 8'h00; 
         wr_cs_weight_tmp <= 1'b0;
         wr_cs_scaler_tmp <= 1'b0;
+        wr_cs_bias_tmp <= 1'b0; 
     end else begin
-        // if (weight_fetch_enable | scaler_fetch_enable) begin
-        if (weight_fetch_enable | scaler_fetch_enable) begin            
+        if (weight_fetch_enable | scaler_fetch_enable | bias_fetch_enable) begin            
             rd_en <= 1'b1;
             rd_addr <= src_addr + WEIGHT_ADDR_OFFSET;
             wr_addr_tmp <= dst_addr;
             counter <= (fetch_counter == 8'b0) ? 8'b0 : (fetch_counter - 1);
             wr_cs_weight_tmp <= (weight_fetch_enable) ? 1'b1 : 1'b0;
             wr_cs_scaler_tmp <= (scaler_fetch_enable) ? 1'b1 : 1'b0;
+            wr_cs_bias_tmp <= (bias_fetch_enable) ? 1'b1 : 1'b0;
         end
         else begin
             if (counter != 8'h00) begin
@@ -164,6 +167,7 @@ always@(posedge clk) begin
                 counter <= counter - 1; 
                 wr_cs_weight_tmp <= wr_cs_weight_tmp;
                 wr_cs_scaler_tmp <= wr_cs_scaler_tmp;
+                wr_cs_bias_tmp <= wr_cs_bias_tmp;
             end
             else begin
                 rd_en <= 1'b0;
@@ -172,29 +176,17 @@ always@(posedge clk) begin
                 counter <= 8'h00; 
                 wr_cs_weight_tmp <= 1'b0;
                 wr_cs_scaler_tmp <= 1'b0;
+                wr_cs_bias_tmp <= 1'b0;
             end
         end
     end
 end
 
-
-reg weight_fetch_flag;
-reg weight_fetch_tmp;
-reg scaler_fetch_flag;
-reg scaler_fetch_tmp;
-
-//always@(posedge clk) begin
-//    weight_fetch_tmp <= weight_fetch_enable;
-//    weight_fetch_flag <= weight_fetch_tmp;
-//    fetch_done <= weight_fetch_flag; // TODO: improve with data ensure mechanism, make sure the feature data is access with ack signal
-//    scaler_fetch_tmp <= scaler_fetch_enable;
-//    scaler_fetch_flag <= scaler_fetch_tmp;    
-//end
-
 reg fetch_tmp;
 reg fetch_tmp_2;
 reg wr_cs_scaler_tmp;
 reg wr_cs_weight_tmp;
+reg wr_cs_bias_tmp;
 
 
 always @(posedge clk) begin
@@ -216,11 +208,13 @@ always@(posedge clk) begin
         wr_data <= 64'h0;
         wr_cs_scaler <= 0;
         wr_cs_weight <= 0;
+        wr_cs_bias <= 0;
     end
     else begin
         wr_data <= w_data;
         wr_cs_scaler <= wr_cs_scaler_tmp;
         wr_cs_weight <= wr_cs_weight_tmp;
+        wr_cs_bias <= wr_cs_bias_tmp;
     end
 end
 

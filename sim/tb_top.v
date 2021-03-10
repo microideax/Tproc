@@ -44,13 +44,13 @@ wire i_weight_rd_en;
 
 
 wire [63:0] i_instr_port;
-wire [7:0] i_instr_addr;
+wire [15:0] i_instr_addr;
 wire i_instr_rd_en;
 
 
 // instanciate test memory sapce for feature data and instruction data
 reg [127:0] test_feature_storage [1023:0];
-reg [63:0]  test_weight_storage [4096:0];
+reg [63:0]  test_weight_storage [8191:0];
 reg [63:0] test_instruction_storage [8191:0];
 
 // reg [ Tn * Tm * KERNEL_SIZE * KERNEL_SIZE * KERNEL_WIDTH - 1 : 0 ]  weight_wire;

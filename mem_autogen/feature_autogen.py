@@ -1,3 +1,11 @@
+"""
+feature fifo order:
+0001000200030004....0008
+0009000a000b........0010
+...
+fifo output: 0001->0002->0003 ...
+"""
+
 from PIL import Image 
 import numpy as np
 

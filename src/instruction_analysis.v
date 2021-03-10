@@ -128,8 +128,9 @@ always@(posedge clk) begin
                 com_type <= 8'h00;
             end
             8'h04: begin
-                feature_fetch_enable <= ~reg_1[0];
+                feature_fetch_enable <= (reg_1 == 0) ? 1 : 0;//~reg_1[0];
                 weight_fetch_enable  <= reg_1[0];
+                bias_fetch_enable  <= reg_1[1];
                 scaler_fetch_enable <= reg_1[2];
                 fetch_type <= reg_1;
                 src_addr <= {reg_2, reg_3};

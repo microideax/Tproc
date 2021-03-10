@@ -35,7 +35,10 @@ generate
         //assign feature_reorder[i] = feature_in[((i%25/5) + 5 * (i/25) + 20 * (i%5)+1)*FEATURE_WIDTH-1:((i%25/5) + 5 * (i/25) + 20 * (i%5))*FEATURE_WIDTH];
         //assign feature_reorder[i] = feature_in[(i+1)*FEATURE_WIDTH-1:i*FEATURE_WIDTH];
         assign weight_in_wire[i] = weight_in[(i+1)*KERNEL_WIDTH-1:i*KERNEL_WIDTH];
-        assign temp_feature[i] = feature_in_wire[i] * weight_in_wire[i];
+        //assign temp_feature[i] = feature_in_wire[i] * weight_in_wire[i];
+        assign temp_feature[i] = (weight_in_wire[i] == 2'b01) ? feature_in_wire[i]
+                               : (weight_in_wire[i] == 2'b11) ? ((~feature_in_wire[i]) + 1)
+                               : 0;
         assign temp_feature_out[(i+1)*FEATURE_WIDTH-1 : i*FEATURE_WIDTH] = temp_feature[i];
     end
 endgenerate

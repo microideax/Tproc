@@ -2,6 +2,7 @@
 verilog code version: 28/2/2021
 
 inst template: 
+0402002000000008 bias_fetch
 0400000000000105 feature_fetch line 0
 0400000500010105 feature_fetch line 1
 0400000a00020105 feature_fetch line 2
@@ -14,6 +15,8 @@ inst template:
 0404002000000008 scaler_fetch
 4001010000000000 shift vertical reg(reg2: vertical_reg_select  reg3: line_buffer_mod(fetch 5 columns -- 0; 1 column -- 1))
 8100000501000100 CONV 
+
+to conv each line, we need 58 instr.
 """
 img_line = 28
 img_column = 28
@@ -54,12 +57,17 @@ def vertical_shift(inst_list, mod):
 	else:
 		inst = "4001010100000000"
 	inst_list.append(inst)
-	
 
+def fetch_bias(inst_list):
+	inst = "0402002000000008" #tmp
+	inst_list.append(inst)
+
+
+	
+fetch_bias(output_list)
 fetch_weight(output_list)
 
 #feature fetch: ram_depth is 16 so counter can not be larger than 2
-
 
 for i in range(img_line - kernel_size + 1):
 	line_buffer_mod = 0
@@ -71,6 +79,10 @@ for i in range(img_line - kernel_size + 1):
 		line_buffer_mod = 1
 		pass
 	pass
+	vertical_shift(output_list, line_buffer_mod)
+	vertical_shift(output_list, line_buffer_mod)
+	vertical_shift(output_list, line_buffer_mod)
+	vertical_shift(output_list, line_buffer_mod)
 
 fileObject = open('i_instr_init.mem', 'w')
 for inst in output_list:

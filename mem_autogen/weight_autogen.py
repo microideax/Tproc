@@ -2,12 +2,13 @@
 verilog code version: 28/2/2021
 """
 
-output_list = []
+
 Tn = 4
 Tm = 8
 img_line = 28
 img_column = 28
 weight_1 = "0001555555555555"
+#order         1st column -> 5th column
 weight_0 = "0000000000000000"
 scaler_1 = "0000000000000001"
 output_list = []

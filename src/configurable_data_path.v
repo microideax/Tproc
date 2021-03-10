@@ -37,6 +37,10 @@ module configurable_data_path #(
     output wire scaler_buffer_rd_en,
     output wire [Tm* FEATURE_WIDTH + SCALER_WIDTH-1 : 0] scaled_feature_output,
 
+    input wire [FEATURE_WIDTH - 1 : 0] bias_data,
+    output reg [15:0] bias_addr,
+    output wire bias_buffer_rd_en,
+
     output wire compute_done
 );
 
@@ -222,6 +226,25 @@ scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) single_
     .data_o(scaled_feature)
 );
 
+wire [FEATURE_WIDTH-1 : 0] biased_feature;
+assign bias_buffer_rd_en = tn_channel_done;
+always @(posedge clk or posedge rst) begin
+  if(rst) begin
+    bias_addr <= 0;
+  end else begin
+    bias_addr <= (bias_buffer_rd_en) ? (bias_addr + 1) : 0;
+  end
+end
+adder_2in_1out #(
+  .FEATURE_WIDTH(FEATURE_WIDTH)
+  )bias_adder_tree(
+    .clk(clk),
+    .rst(rst),
+    .A1 (scaled_feature),
+    .B1 (bias_data),
+    .O  (biased_feature)  
+);
+
 
 // assign tm_scaled_feature = scaled_feature;
 
@@ -263,7 +286,8 @@ always@(posedge clk or posedge rst)begin
     reg_4 <= reg_3;
     reg_3 <= reg_2;
     reg_2 <= reg_1;
-    reg_1 <= out_channel_counter;
+    reg_1 <= reg_0;
+    reg_0 <= out_channel_counter;
   end
 end
 
@@ -305,7 +329,7 @@ generate
       .wea(tm_wr_enable[i+1]),
       .addra(tm_wr_addr),
       .addrb(),
-      .dia(scaled_feature),
+      .dia(biased_feature),
       .dob()
     ); 
   end
@@ -317,7 +341,7 @@ integer fp_w;
 reg [3:0] mem_count;
 initial begin
 
-  fp_w = $fopen("data_out.txt","w");
+  fp_w = $fopen("Tm_1_ram.txt","w");
   #1800;
   for (mem_count = 0; mem_count < 8; mem_count = mem_count + 1) begin
     $fdisplay(fp_w, "%d", scaled_feature);          //%h denotes hex
@@ -325,9 +349,34 @@ initial begin
   end
 
   $fclose(fp_w);
-end
-*/
+end*/
 
+
+integer fp_w;
+reg [15:0] cnt_sim;
+initial begin
+  fp_w = $fopen("Tm_0_ram.txt","w");
+  #300000;
+  $fclose(fp_w);
+  //$stop;
+end
+
+always @(posedge tm_wr_enable[1]) begin
+  #5;
+  $fdisplay(fp_w, "%d", biased_feature); 
+  cnt_sim <= cnt_sim + 1;
+end
+
+//always begin
+//  #1000
+//  $fdisplay(fp_w, "%d", biased_feature);
+//end
+
+//always @(cnt_sim) begin
+//  if(cnt_sim == 24*24 - 1) begin
+//    $fclose(fp_w);
+//  end
+//end
 
 endmodule
 
