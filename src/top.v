@@ -348,6 +348,7 @@ wire [15:0] w_wr_addr;
 wire [63:0] w_wr_data;
 wire wr_cs_weight;
 wire wr_cs_scaler;
+wire wr_cs_bias;
 
 i_weight_fetch weight_fetcher(
     .clk(clk),
@@ -355,6 +356,7 @@ i_weight_fetch weight_fetcher(
 
     .weight_fetch_enable(weight_fetch_enable),
     .scaler_fetch_enable(scaler_fetch_enable),
+    .bias_fetch_enable(bias_fetch_enable),
     .fetch_type(fetch_type),
     .src_addr(src_addr),
     .dst_addr(dst_addr),
@@ -367,11 +369,12 @@ i_weight_fetch weight_fetcher(
     .wr_en(w_wr_en),
     .wr_cs_weight(wr_cs_weight),
     .wr_cs_scaler(wr_cs_scaler),
+    .wr_cs_bias(wr_cs_bias),
     .fetch_done(fetch_done_from_w)
 );
 
-wire clp_to_weight_buffer_enable;
-wire [15:0] clp_to_weight_buffer_addr;
+wire clp_to_weight_buffer_enable, clp_to_bias_buffer_enable;
+wire [15:0] clp_to_weight_buffer_addr, clp_to_bias_buffer_addr;
 wire [Tn*64 - 1 : 0] weight_wire;
 weight_buffer_array #(16, 4, 64, 3) weight_buffer(
     .clk(clk),
@@ -384,6 +387,17 @@ weight_buffer_array #(16, 4, 64, 3) weight_buffer(
     .weight_buffer_out(weight_wire)
 );
 
+wire [FEATURE_WIDTH - 1:0] bias_wire_CLP;
+dp_ram #(16, 4, 64) bias_buffer(
+    .clk(clk),
+    .ena(wr_cs_bias),
+    .enb(clp_to_bias_buffer_enable),
+    .wea(w_wr_en),
+    .addra(w_wr_addr),
+    .addrb(clp_to_bias_buffer_addr),
+    .dia(w_wr_data),
+    .dob(bias_wire_CLP)
+    );
 
 // wire [15:0] s_wr_addr;
 // wire [63:0] s_wr_data;
@@ -419,6 +433,7 @@ syn_fifo instruction_mem(
 */
 
 wire [Tn*KERNEL_SIZE*KERNEL_SIZE*KERNEL_WIDTH - 1:0] weight_wire_CLP;
+
 genvar i;
 generate
   for (i = 0; i < Tn; i = i+1) begin
@@ -463,6 +478,10 @@ configurable_data_path #(
         .scaler_data(scaler_data),
         .scaler_buffer_rd_en(scaler_buffer_rd_en),
         .scaled_feature_output(scaled_feature),
+
+        .bias_data              (bias_wire_CLP),
+        .bias_addr              (clp_to_bias_buffer_addr),
+        .bias_buffer_rd_en      (clp_to_bias_buffer_enable),
 
         .compute_done(compute_done)
 );
