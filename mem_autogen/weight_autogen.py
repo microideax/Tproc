@@ -11,6 +11,7 @@ weight_1 = "0001555555555555"
 #order         1st column -> 5th column
 weight_0 = "0000000000000000"
 scaler_1 = "0000000000000001"
+bias_1 = "0000000000000001"
 output_list = []
 
 
@@ -23,12 +24,15 @@ for i in range(Tn):
 			mem = weight_0
 		output_list.append(mem)
 
+#bias part
+for t in range(Tm):
+	mem = bias_1
+	output_list.append(mem)
+
 #scaler part
-for line in range(img_line - 4):
-	for column in range(img_column - 4):
-		for channel in range(Tm):
-			mem = scaler_1
-			output_list.append(mem)
+for t in range(Tm):
+	mem = scaler_1
+	output_list.append(mem)
 
 #output
 fileObject = open('i_weight_init.mem', 'w')
