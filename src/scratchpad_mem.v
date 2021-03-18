@@ -27,8 +27,12 @@ module scratchpad_mem#(
 );
 
 // reg [DATA_BUS_WIDTH - 1 : 0] data_reg;
-reg [DATA_BUS_WIDTH - 1 : 0] din_to_fifo [KERNEL_SIZE-1 : 0];
-reg [KERNEL_SIZE-1 : 0] wr_en_line;
+reg [DATA_BUS_WIDTH - 1 : 0] din_to_fifo__fetch [KERNEL_SIZE-1 : 0];
+wire [DATA_BUS_WIDTH - 1 : 0] din_to_fifo__buffer [KERNEL_SIZE-1 : 0];
+wire [DATA_BUS_WIDTH - 1 : 0] din_to_fifo [KERNEL_SIZE-1 : 0];
+reg [KERNEL_SIZE-1 : 0] wr_en_line__fetch;
+wire [KERNEL_SIZE-1 : 0] wr_en_line__buffer;
+wire [KERNEL_SIZE-1 : 0] wr_en_line;
 
 // always@(posedge clk) begin
     // data_reg <= i_data;
@@ -36,16 +40,16 @@ reg [KERNEL_SIZE-1 : 0] wr_en_line;
 
 always@(posedge clk) begin
     if(rst) begin
-        wr_en_line[KERNEL_SIZE - 1 : 0] <= 5'b00000;
+        wr_en_line__fetch[KERNEL_SIZE - 1 : 0] <= 5'b00000;
     end 
     else begin
         if(wr_en) begin
-            din_to_fifo[wr_mem_line] <= i_data;
-            wr_en_line[wr_mem_line] <= wr_en;
+            din_to_fifo__fetch[wr_mem_line] <= i_data;
+            wr_en_line__fetch[wr_mem_line] <= wr_en;
         end 
         else begin
             // din_to_fifo[wr_mem_line] <= 0;
-            wr_en_line[KERNEL_SIZE - 1 : 0] <= 5'b00000;
+            wr_en_line__fetch[KERNEL_SIZE - 1 : 0] <= 5'b00000;
         end
     end
 end
@@ -106,7 +110,7 @@ wire [KERNEL_SIZE-1 : 0] empty_wire;
 genvar i;
 generate
     for(i=0; i < KERNEL_SIZE; i=i+1) begin: s_pad_mem
-    asymmetric_fifo spad_mem_0(
+    asymmetric_fifo spad_mem(
         .clk(clk),
         .srst(rst),
         .din(din_to_fifo[i]), // [127:0]
@@ -117,8 +121,30 @@ generate
         .empty(empty_wire[i])
     );
     end
-    
+    for(i=1; i < KERNEL_SIZE; i=i+1) begin: s_pad_buffer
+    line_shift_buffer shift_buffer(
+        .clk       (clk),
+        .rst       (rst),
+        .spad_rd_en(rd_en_wire[i]),
+        .data_in   (fifo_to_dout[i*FEATURE_WIDTH + FEATURE_WIDTH-1 : i*FEATURE_WIDTH]),
+        .data_out  (din_to_fifo__buffer[i-1]),
+        .wr_en     (wr_en_line__buffer[i-1])
+    );
+    spad_input_switch input_switch(
+        .fetch_wr_en   (wr_en_line__fetch[i-1]),
+        .buffer_wr_en  (wr_en_line__buffer[i-1]),
+        .wr_en         (wr_en_line[i-1]),
+        .fetch_data_in (din_to_fifo__fetch[i-1]),
+        .buffer_data_in(din_to_fifo__buffer[i-1]),
+        .data_in       (din_to_fifo[i-1])
+    );
+    end
+
 endgenerate
+
+assign    din_to_fifo[KERNEL_SIZE-1] = din_to_fifo__fetch[KERNEL_SIZE-1];
+assign    wr_en_line[KERNEL_SIZE-1] = wr_en_line__fetch[KERNEL_SIZE-1];
+
 
 assign data_out[KERNEL_SIZE * FEATURE_WIDTH -1 : 0] = fifo_to_dout[KERNEL_SIZE * FEATURE_WIDTH -1 : 0];
 assign group_empty = empty_wire[0];
@@ -137,4 +163,117 @@ always@(full_wire or empty_wire)begin
     end
 end
 */
+endmodule
+
+
+//feature buffer : used to fill the next line with previous line feature
+module line_shift_buffer  #(
+    parameter FEATURE_WIDTH = `FEATURE_WIDTH, // 16 bits
+    parameter DATA_BUS_WIDTH = `DATA_BUS_WIDTH, // 128 bits
+    parameter BUFFER_DEPTH_LOG2 = $clog2(DATA_BUS_WIDTH/FEATURE_WIDTH), // 3 bits
+    parameter BUFFER_DEPTH = DATA_BUS_WIDTH/FEATURE_WIDTH // 8
+)(
+    input wire clk,  
+    input wire rst,
+    input wire spad_rd_en, // former spad's rd_en
+    input wire [FEATURE_WIDTH - 1 : 0] data_in,
+    output wire [DATA_BUS_WIDTH - 1 : 0] data_out,
+    output reg wr_en
+);
+
+reg [DATA_BUS_WIDTH - 1 : 0] data_buffer;
+reg [BUFFER_DEPTH_LOG2 - 1 : 0] buffer_cnt, buffer_cnt_t;
+reg spad_rd_en_t;// sync with dout from spad
+
+
+always @(posedge clk or posedge rst) begin
+    if(rst) begin
+        spad_rd_en_t <= 0;
+        buffer_cnt <= 0;
+        buffer_cnt_t <= 0;
+        data_buffer <= 0;
+        wr_en <= 0;
+    end else begin
+        spad_rd_en_t <= spad_rd_en; // sync with dout from spad
+        buffer_cnt <= spad_rd_en_t ? (buffer_cnt + 1) : buffer_cnt;
+        buffer_cnt_t <= buffer_cnt;
+        data_buffer <= spad_rd_en_t ? {data_buffer[DATA_BUS_WIDTH - FEATURE_WIDTH - 1 : 0], data_in} : data_buffer;
+        wr_en <= (buffer_cnt == 3'b0 && buffer_cnt_t == 3'b111) ? 1 : 0;
+    end
+end
+
+assign data_out = data_buffer;
+
+
+endmodule
+
+//2*8 feature buffer : used to fill the next line with previous line feature
+/*
+module line_shift_buffer  #(
+    parameter FEATURE_WIDTH = `FEATURE_WIDTH, // 16 bits
+    parameter DATA_BUS_WIDTH = `DATA_BUS_WIDTH, // 128 bits
+    parameter BUFFER_DEPTH_LOG2 = $clog2(2*DATA_BUS_WIDTH/FEATURE_WIDTH), // 4 bits
+    parameter BUFFER_DEPTH = 2*DATA_BUS_WIDTH/FEATURE_WIDTH // 16
+)(
+    input wire clk,  
+    input wire rst,
+    input wire spad_rd_en, // former spad's rd_en
+    input wire [FEATURE_WIDTH - 1 : 0] data_in,
+    output wire [DATA_BUS_WIDTH - 1 : 0] data_out,
+    output wire wr_en
+);
+
+reg buffer_mod; //0: use [127:0]  ;  1: use [255:128]
+reg wr_en_0, wr_en_1;
+reg [2*DATA_BUS_WIDTH - 1 : 0] data_buffer;
+reg [BUFFER_DEPTH_LOG2 - 1 : 0] buffer_cnt, buffer_cnt_t;
+reg spad_rd_en_t;// sync with dout from spad
+
+
+always @(posedge clk or posedge rst) begin
+    if(rst) begin
+        spad_rd_en_t <= 0;
+        buffer_cnt <= 0;
+        buffer_cnt_t <= 0;
+        data_buffer <= 0;
+        wr_en_0 <= 0;
+        wr_en_1 <= 0;
+    end else begin
+        spad_rd_en_t <= spad_rd_en; // sync with dout from spad
+        buffer_cnt <= spad_rd_en_t ? (buffer_cnt + 1) : buffer_cnt;
+        buffer_cnt_t <= buffer_cnt;
+        data_buffer <= (wr_en_0) ? data_buffer[] | (data_in << buffer_cnt*FEATURE_WIDTH)
+                     : data_buffer | (data_in << buffer_cnt*FEATURE_WIDTH); // other bits remain the same
+        wr_en_0 <= (buffer_cnt == 4'd8 && buffer_cnt_t == 4'd7) ? 1 : 0;
+        wr_en_1 <= (buffer_cnt == 4'd0 && buffer_cnt_t == 4'd15) ? 1 : 0;
+    end
+end
+
+assign data_out = (wr_en_0) ? data_buffer[BUFFER_DEPTH/2 - 1 : 0]
+                : (wr_en_1) ? data_buffer[BUFFER_DEPTH - 1 : BUFFER_DEPTH/2]
+                : 0;
+assign wr_en = wr_en_0 | wr_en_1;
+
+endmodule
+*/
+
+
+
+module spad_input_switch #(
+    parameter DATA_BUS_WIDTH = `DATA_BUS_WIDTH // 128 bits
+)(
+    input fetch_wr_en, 
+    input buffer_wr_en,
+    output wr_en,
+    
+    input [DATA_BUS_WIDTH - 1 : 0] fetch_data_in,
+    input [DATA_BUS_WIDTH - 1 : 0] buffer_data_in,
+    output [DATA_BUS_WIDTH - 1 : 0] data_in
+);
+// we define that fetch operation has a higher priority
+    assign data_in = (fetch_wr_en) ? fetch_data_in
+                   : (buffer_wr_en) ? buffer_data_in
+                   : 0;
+    assign wr_en = fetch_wr_en | buffer_wr_en;
+
 endmodule

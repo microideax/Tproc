@@ -56,10 +56,12 @@ wire [Tn * KERNEL_SIZE * FEATURE_WIDTH - 1 :0] feature_transfer_wire;
 wire [KERNEL_SIZE * FEATURE_WIDTH - 1 : 0] line_buffer_in [Tn-1 : 0];
 wire [Tn * KERNEL_SIZE * FEATURE_WIDTH - 1 :0] line_buffer_out;
 
+//mem select
 assign feature_transfer_wire[Tn * FEATURE_WIDTH * KERNEL_SIZE - 1 :0] = 
                     (input_buffer_select) ? feature_mem_read_data_1[Tn * FEATURE_WIDTH * KERNEL_SIZE - 1 :0] 
                     : feature_mem_read_data_0[Tn * FEATURE_WIDTH * KERNEL_SIZE - 1 :0];
 
+//wire divider
 generate
     for(i = 0 ; i < Tn ; i = i + 1) begin:array_to_lines
         assign line_buffer_in[i] = feature_transfer_wire[(i+1) * KERNEL_SIZE * FEATURE_WIDTH - 1 : i * KERNEL_SIZE * FEATURE_WIDTH];

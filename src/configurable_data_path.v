@@ -33,9 +33,10 @@ module configurable_data_path #(
     output reg [15:0] weight_addr,
     output reg weight_read_en,
     
-    input wire [15 : 0] scaler_data,
+    input wire [15:0] scaler_data,
+    output reg [15:0] scaler_addr,
     output wire scaler_buffer_rd_en,
-    output wire [Tm* FEATURE_WIDTH + SCALER_WIDTH-1 : 0] scaled_feature_output,
+    //output wire [Tm* FEATURE_WIDTH + SCALER_WIDTH-1 : 0] scaled_feature_output,
 
     input wire [FEATURE_WIDTH - 1 : 0] bias_data,
     output reg [15:0] bias_addr,
@@ -216,6 +217,13 @@ adder_tree_tn channel_adder_tree(
 );
 
 assign scaler_buffer_rd_en = tn_kernel_done;
+always @(posedge clk or posedge rst) begin
+  if(rst) begin
+    scaler_addr <= 0;
+  end else begin
+    scaler_addr <= (scaler_buffer_rd_en) ? (scaler_addr + 1) : 0;
+  end
+end
 wire [FEATURE_WIDTH-1 : 0] scaled_feature;
 scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) single_feature_scaling_unit (
     .clk(clk),

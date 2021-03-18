@@ -36,13 +36,20 @@ wire [ DATA_WIDTH - 1 : 0 ]                           shift_ram_in[KERNEL_SIZE -
 genvar i;
 
 
-assign shift_ram_in[0] = (line_buffer_mod == 0)? data_in[(KERNEL_SIZE - 1) * DATA_WIDTH + DATA_WIDTH - 1 : (KERNEL_SIZE - 1) * DATA_WIDTH ] : ((current_kernel_size==5)? data_in[DATA_WIDTH - 1 : 0] : {DATA_WIDTH{1'd0}});
+assign shift_ram_in[0] = (line_buffer_mod == 0)? data_in[(KERNEL_SIZE - 1) * DATA_WIDTH + DATA_WIDTH - 1 : (KERNEL_SIZE - 1) * DATA_WIDTH ]//width = DATA_WIDTH
+                       : ((current_kernel_size==5)? data_in[DATA_WIDTH - 1 : 0]
+                       : {DATA_WIDTH{1'd0}});
 
-assign shift_ram_in[1] = (line_buffer_mod == 0)? data_in[(KERNEL_SIZE - 2) * DATA_WIDTH + DATA_WIDTH - 1 : (KERNEL_SIZE - 2) * DATA_WIDTH ] : ((current_kernel_size==5)? data_wire[0] : {DATA_WIDTH{1'd0}});
+assign shift_ram_in[1] = (line_buffer_mod == 0)? data_in[(KERNEL_SIZE - 2) * DATA_WIDTH + DATA_WIDTH - 1 : (KERNEL_SIZE - 2) * DATA_WIDTH ]
+                       : ((current_kernel_size==5)? data_wire[0] 
+                       : {DATA_WIDTH{1'd0}});
     
-assign shift_ram_in[2] = (line_buffer_mod == 0)? data_in[(KERNEL_SIZE - 3) * DATA_WIDTH + DATA_WIDTH - 1 : (KERNEL_SIZE - 3) * DATA_WIDTH ] : ((current_kernel_size==5)? data_wire[1] : data_in[DATA_WIDTH - 1 : 0]);
+assign shift_ram_in[2] = (line_buffer_mod == 0)? data_in[(KERNEL_SIZE - 3) * DATA_WIDTH + DATA_WIDTH - 1 : (KERNEL_SIZE - 3) * DATA_WIDTH ]
+                       : ((current_kernel_size==5)? data_wire[1]
+                       : data_in[DATA_WIDTH - 1 : 0]);
        
-assign shift_ram_in[3] = (line_buffer_mod == 0)? data_in[(KERNEL_SIZE - 4) * DATA_WIDTH + DATA_WIDTH - 1 : (KERNEL_SIZE - 4) * DATA_WIDTH ] : data_wire[2];
+assign shift_ram_in[3] = (line_buffer_mod == 0)? data_in[(KERNEL_SIZE - 4) * DATA_WIDTH + DATA_WIDTH - 1 : (KERNEL_SIZE - 4) * DATA_WIDTH ]
+                       : data_wire[2];
 
               
 var_len_shift_ram ram0 (
