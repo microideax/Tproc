@@ -64,6 +64,9 @@ wire [63:0] fetcher_to_imem;
 wire [4:0]  i_mem_addr_in;
 wire i_mem_empty;
 wire i_mem_full;
+wire kn_size_mode;
+wire kn_size_mode_config;
+wire kn_config_enable;
 
 instr_fetch instruction_fetcher(
 .clk(clk),
@@ -157,7 +160,7 @@ wire fetch_done_from_i;
 wire fetch_done_from_w;
 wire shift_done_from_virreg;
 
-assign fetch_done_wire = fetch_done_from_i | fetch_done_from_w | shift_done_from_virreg | test_exe_done | compute_done;
+assign fetch_done_wire = fetch_done_from_i | fetch_done_from_w | shift_done_from_virreg | test_exe_done | compute_done | kn_config_done;
 
 wire [3:0] current_kernel_size;
 wire [7:0] com_type_wire;
@@ -206,8 +209,21 @@ instruction_decode instruction_decoder(
                       .line_buffer_enable(line_buffer_enable),
                       .feature_in_select(feature_in_select), // 0 :  CLP read feature from feature buffer 0   1:  CLP read feature from ram1
                       .line_buffer_mod(line_buffer_mod),
-                      .feature_out_select(feature_out_select)
+                      .feature_out_select(feature_out_select),
+                      .kn_size_mode_config(kn_size_mode_config),
+                      .kn_config_enable(kn_config_enable)
                     );     
+
+wire kn_config_done;
+
+kernel_size_configure i_kn_config(
+  .clk                (clk),
+  .rst                (rst),
+  .kn_size_mode_config(kn_size_mode_config),
+  .kn_config_enable   (kn_config_enable),
+  .kn_size_mode       (kn_size_mode),
+  .kn_config_done     (kn_config_done)
+);
                     
 wire                                     feature_mem_enable;
 wire  [7:0]                              feature_mem_wr_addr;
@@ -303,6 +319,7 @@ scratchpad_feature_mem #(Tn, KERNEL_SIZE, FEATURE_WIDTH, DATA_BUS_WIDTH) feature
     .wr_mem_line(f_mem_addr_0[3:0]),
     .rd_mem_group(),
     .rd_mem_line(),
+    .kn_size_mode(kn_size_mode),
 
     .i_port(f_mem_data_0),
     .data_out(feature_mem_read_data_0)
@@ -473,6 +490,7 @@ configurable_data_path #(
         .config_clear(),
         .com_type(com_type_wire),
         .kernel_size(current_kernel_size),
+        .kn_size_mode(kn_size_mode),
     
         .vertical_shift_mod(line_buffer_mod),
         .virtical_reg_shift(virtical_reg_shift),

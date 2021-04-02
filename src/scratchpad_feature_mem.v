@@ -24,6 +24,7 @@ module scratchpad_feature_mem#(
     input wire [3:0] wr_mem_line,  // select the mem line from the KERNEL_SIZE line of memory
     input wire [3:0] rd_mem_group,
     input wire [3:0] rd_mem_line,
+    input wire kn_size_mode,
 
     input wire [DATA_BUS_WIDTH-1: 0] i_port,
 
@@ -116,6 +117,7 @@ generate
             .i_data(i_data[i]),
             .wr_en(wr_en_group[i]),
             .rd_en(rd_en),
+            .kn_size_mode(kn_size_mode),
             .data_out(data_out[i*FEATURE_WIDTH*KERNEL_SIZE + FEATURE_WIDTH*KERNEL_SIZE -1: i*FEATURE_WIDTH*KERNEL_SIZE]),
             .group_empty(group_empty_wire[i]),
             .group_full(group_full_wire[i])
