@@ -20,6 +20,7 @@ module scratchpad_mem#(
     input wire [DATA_BUS_WIDTH-1: 0] i_data,
     input wire wr_en,
     input wire rd_en,
+    input wire kn_size_mode,
     
     output wire [FEATURE_WIDTH*KERNEL_SIZE-1: 0] data_out,
     output wire group_empty,
@@ -28,7 +29,7 @@ module scratchpad_mem#(
 
 // reg [DATA_BUS_WIDTH - 1 : 0] data_reg;
 reg [DATA_BUS_WIDTH - 1 : 0] din_to_fifo__fetch [KERNEL_SIZE-1 : 0];
-wire [DATA_BUS_WIDTH - 1 : 0] din_to_fifo__buffer [KERNEL_SIZE-1 : 0];
+wire [KERNEL_SIZE*DATA_BUS_WIDTH - 1 : 0] din_to_fifo__buffer;
 wire [DATA_BUS_WIDTH - 1 : 0] din_to_fifo [KERNEL_SIZE-1 : 0];
 reg [KERNEL_SIZE-1 : 0] wr_en_line__fetch;
 wire [KERNEL_SIZE-1 : 0] wr_en_line__buffer;
@@ -122,23 +123,33 @@ generate
     );
     end
     for(i=1; i < KERNEL_SIZE; i=i+1) begin: s_pad_buffer
-    line_shift_buffer shift_buffer(
-        .clk       (clk),
-        .rst       (rst),
-        .spad_rd_en(rd_en_wire[i]),
-        .data_in   (fifo_to_dout[i*FEATURE_WIDTH + FEATURE_WIDTH-1 : i*FEATURE_WIDTH]),
-        .data_out  (din_to_fifo__buffer[i-1]),
-        .wr_en     (wr_en_line__buffer[i-1])
-    );
+    //line_shift_buffer shift_buffer(
+    //    .clk       (clk),
+    //    .rst       (rst),
+    //    .spad_rd_en(rd_en_wire[i]),
+    //    .data_in   (fifo_to_dout[i*FEATURE_WIDTH + FEATURE_WIDTH-1 : i*FEATURE_WIDTH]),
+    //    .data_out  (din_to_fifo__buffer[i-1]),
+    //    .wr_en     (wr_en_line__buffer[i-1])
+    //);
     spad_input_switch input_switch(
         .fetch_wr_en   (wr_en_line__fetch[i-1]),
         .buffer_wr_en  (wr_en_line__buffer[i-1]),
         .wr_en         (wr_en_line[i-1]),
         .fetch_data_in (din_to_fifo__fetch[i-1]),
-        .buffer_data_in(din_to_fifo__buffer[i-1]),
+        .buffer_data_in(din_to_fifo__buffer[i*DATA_BUS_WIDTH-1:(i-1)*DATA_BUS_WIDTH]),
         .data_in       (din_to_fifo[i-1])
     );
     end
+
+    line_shift_buffer_array shift_buffer_array(
+        .clk         (clk),
+        .rst         (rst),
+        .kn_size_mode(kn_size_mode),
+        .spad_rd_en  (rd_en_wire[KERNEL_SIZE-1:1]),
+        .data_in     (fifo_to_dout[(KERNEL_SIZE-1)*FEATURE_WIDTH + FEATURE_WIDTH-1 : FEATURE_WIDTH]),
+        .data_out    (din_to_fifo__buffer[(KERNEL_SIZE-1)*DATA_BUS_WIDTH - 1 : 0]),
+        .wr_en       (wr_en_line__buffer[KERNEL_SIZE-1 - 1:0])
+    );
 
 endgenerate
 
@@ -163,6 +174,62 @@ always@(full_wire or empty_wire)begin
     end
 end
 */
+endmodule
+
+module line_shift_buffer_array #(
+    parameter FEATURE_WIDTH = `FEATURE_WIDTH, // 16 bits
+    parameter DATA_BUS_WIDTH = `DATA_BUS_WIDTH, // 128 bits
+    parameter BUFFER_DEPTH_LOG2 = $clog2(DATA_BUS_WIDTH/FEATURE_WIDTH), // 3 bits
+    parameter BUFFER_DEPTH = DATA_BUS_WIDTH/FEATURE_WIDTH, // 8
+    parameter KERNEL_SIZE = `KERNEL_SIZE,
+    parameter KERNEL_SIZE_5_MODE = `KERNEL_SIZE_5_MODE,
+    parameter KERNEL_SIZE_3_MODE = `KERNEL_SIZE_3_MODE
+)(
+    input wire clk,  
+    input wire rst,
+    input wire kn_size_mode,
+    input wire [KERNEL_SIZE - 1 : 0] spad_rd_en, // former spad's rd_en  (row 1, 2, 3, 4)
+    input wire [(KERNEL_SIZE - 1) * FEATURE_WIDTH - 1 : 0] data_in,//row 1, 2, 3, 4
+    output reg [(KERNEL_SIZE - 1) * DATA_BUS_WIDTH - 1 : 0] data_out,//row 0, 1, 2, 3
+    output wire [KERNEL_SIZE - 1 : 0] wr_en
+);
+
+reg [(KERNEL_SIZE - 1) * FEATURE_WIDTH - 1 : 0] data_in_inter;
+wire [(KERNEL_SIZE - 1) * DATA_BUS_WIDTH - 1 : 0] data_out_inter;
+
+always @(*) begin
+    case (kn_size_mode)
+        KERNEL_SIZE_5_MODE : begin
+            data_in_inter = data_in;
+            data_out = data_out_inter;
+        end
+        KERNEL_SIZE_3_MODE : begin
+            data_in_inter[FEATURE_WIDTH - 1 : 0] = data_in[2*FEATURE_WIDTH - 1 : FEATURE_WIDTH];
+            data_in_inter[2*FEATURE_WIDTH - 1 : FEATURE_WIDTH] = data_in[4*FEATURE_WIDTH - 1 : 3*FEATURE_WIDTH];
+            data_in_inter[4*FEATURE_WIDTH - 1 : 2*FEATURE_WIDTH] = 0;
+            data_out = data_out_inter;
+        end
+        default : begin
+            data_in_inter = data_in;
+            data_out = data_out_inter;
+        end
+    endcase
+end
+
+genvar i;
+generate
+    for (i=0; i < KERNEL_SIZE-1; i=i+1) begin
+        line_shift_buffer shift_buffer(
+            .clk       (clk),
+            .rst       (rst),
+            .spad_rd_en(spad_rd_en[i]),
+            .data_in   (data_in_inter[(i+1)*FEATURE_WIDTH - 1 : i*FEATURE_WIDTH]),
+            .data_out  (data_out_inter[(i+1)*DATA_BUS_WIDTH - 1 : i*DATA_BUS_WIDTH]),
+            .wr_en     (wr_en[i])
+        );
+    end
+endgenerate
+
 endmodule
 
 
@@ -277,3 +344,5 @@ module spad_input_switch #(
     assign wr_en = fetch_wr_en | buffer_wr_en;
 
 endmodule
+
+

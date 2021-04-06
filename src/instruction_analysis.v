@@ -42,7 +42,9 @@ module instruction_decode(
        output  reg              feature_in_select,   //0: CLP read feature from ram0          1:  CLP read feature from ram1
        output  reg              line_buffer_mod,
 
-       output  reg              feature_out_select  //0: CLP write feature to ram0           1:  CLP write feature to ram1
+       output  reg              feature_out_select,  //0: CLP write feature to ram0           1:  CLP write feature to ram1
+       output  reg              kn_size_mode_config,        //0: kernel size = 5                     1:  kernel size = 3
+       output  reg              kn_config_enable 
        );
     
 reg [10:0] feature_amount; 
@@ -107,6 +109,8 @@ always@(posedge clk) begin
         vreg_input_select <=0;
         com_type <= 8'h00;
         config_enable <= 1'b0;
+        kn_config_enable <= 1'b0;
+        kn_size_mode_config <= 0;
     end else begin
         case (opcode)
             8'h01: begin
@@ -155,6 +159,10 @@ always@(posedge clk) begin
                 config_enable <= 1'b0;
                 line_buffer_mod <= reg_3[0]; //ruidi 25/2/2021
             end
+            8'h20: begin
+                kn_config_enable <= 1;
+                kn_size_mode_config <= reg_1[0];
+            end
             8'h82: begin
                 $display("Null instruction!!!");
                 test_exe_done <= 1'b1;
@@ -179,6 +187,8 @@ always@(posedge clk) begin
                 com_type <= 8'h00;
                 current_kernel_size <= 8'h00;
                 config_enable <= 1'b0;
+                kn_config_enable <= 1'b0;
+                kn_size_mode_config <= 0;
             end
         endcase
     end

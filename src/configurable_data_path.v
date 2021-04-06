@@ -19,6 +19,7 @@ module configurable_data_path #(
     input wire config_clear,//temporally replaced by conv_done
     input wire [7:0] com_type,
     input wire [3:0] kernel_size,
+    input wire kn_size_mode,
 
     input wire vertical_shift_mod,
     input wire virtical_reg_shift,
@@ -79,6 +80,7 @@ vertical_reg i_vertical_reg(
     .shift_mod   (vertical_shift_mod),
     .enable(virtical_reg_shift),
     .in_select(virreg_input_sel),
+    .kn_size_mode(kn_size_mode),
     .feature_en_0(virreg_to_fmem_0),
     .feature_en_1(virreg_to_fmem_1),
     .dia_0(feature_mem_read_data_0),
@@ -388,3 +390,25 @@ end
 
 endmodule
 
+
+
+module kernel_size_configure (
+  input wire clk,
+  input wire rst,
+  input wire kn_size_mode_config,
+  input wire kn_config_enable,
+  output reg kn_size_mode,
+  output reg kn_config_done
+);
+
+  always @(posedge clk or posedge rst) begin
+    if(rst) begin
+      kn_size_mode <= 0;
+      kn_config_done <= 0;
+    end else begin
+      kn_size_mode <= kn_config_enable ? kn_size_mode_config : kn_size_mode;
+      kn_config_done <= kn_config_enable ? 1 : 0;
+    end
+  end
+
+endmodule

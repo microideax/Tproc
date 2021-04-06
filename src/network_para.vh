@@ -20,3 +20,11 @@
 
 
 //`define cpu_width Tm*Scaler*
+
+
+
+
+// qrd
+`define KERNEL_SIZE_3                   3
+`define KERNEL_SIZE_5_MODE              0
+`define KERNEL_SIZE_3_MODE              1
