@@ -139,15 +139,15 @@ module shift_reg #(
 );
 
 wire [KERNEL_SIZE_3*FEATURE_WIDTH - 1 : 0] sub_dia_0_kn3_a, sub_dia_0_kn3_b, sub_dia_1_kn3_a, sub_dia_1_kn3_b;
-wire [KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH - 1 : 0] sub_d_temp_a, sub_d_temp_b;
+wire [KERNEL_3_BITS - 1 : 0] sub_d_temp_a, sub_d_temp_b;
 
 assign sub_dia_0_kn3_a = sub_dia_0[KERNEL_SIZE_3*FEATURE_WIDTH - 1 : 0];
 assign sub_dia_0_kn3_b = sub_dia_0[(KERNEL_SIZE_3+1)*FEATURE_WIDTH - 1 : FEATURE_WIDTH];
-assign sub_dia_1_kn3_a = sub_dia_0[KERNEL_SIZE_3*FEATURE_WIDTH - 1 : 0];
-assign sub_dia_1_kn3_b = sub_dia_0[(KERNEL_SIZE_3+1)*FEATURE_WIDTH - 1 : FEATURE_WIDTH];
+assign sub_dia_1_kn3_a = sub_dia_1[KERNEL_SIZE_3*FEATURE_WIDTH - 1 : 0];
+assign sub_dia_1_kn3_b = sub_dia_1[(KERNEL_SIZE_3+1)*FEATURE_WIDTH - 1 : FEATURE_WIDTH];
 
-assign sub_d_temp_a = sub_d_temp[KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH - 1 : 0];
-assign sub_d_temp_b = sub_d_temp[2*KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH - 1 : KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH];
+assign sub_d_temp_a = sub_d_temp[KERNEL_3_BITS - 1 : 0];
+assign sub_d_temp_b = sub_d_temp[2*KERNEL_3_BITS - 1 : KERNEL_3_BITS];
 
 always@(posedge clk or posedge rst) begin
     if (rst) begin
@@ -164,9 +164,10 @@ always@(posedge clk or posedge rst) begin
                 sub_d_temp[KERNEL_3_BITS - 1 : 0] <= (d_temp_select_0 == 1) ? {sub_d_temp_a[KERNEL_SIZE_3*(KERNEL_SIZE_3-1)*FEATURE_WIDTH-1 : 0], sub_dia_0_kn3_a}
                                                    : (d_temp_select_1 == 1) ? {sub_d_temp_a[KERNEL_SIZE_3*(KERNEL_SIZE_3-1)*FEATURE_WIDTH-1 : 0], sub_dia_1_kn3_a}
                                                    : sub_d_temp[KERNEL_3_BITS - 1 : 0];
-                sub_d_temp[2*KERNEL_3_BITS - 1 : 0] <= (d_temp_select_0 == 1) ? {sub_d_temp_b[KERNEL_SIZE_3*(KERNEL_SIZE_3-1)*FEATURE_WIDTH-1 : 0], sub_dia_0_kn3_b}
-                                                     : (d_temp_select_1 == 1) ? {sub_d_temp_b[KERNEL_SIZE_3*(KERNEL_SIZE_3-1)*FEATURE_WIDTH-1 : 0], sub_dia_1_kn3_b}
-                                                     : sub_d_temp[2*KERNEL_3_BITS - 1 : 0];
+                sub_d_temp[2*KERNEL_3_BITS - 1 : KERNEL_3_BITS] <= (d_temp_select_0 == 1) ? {sub_d_temp_b[KERNEL_SIZE_3*(KERNEL_SIZE_3-1)*FEATURE_WIDTH-1 : 0], sub_dia_0_kn3_b}
+                                                                 : (d_temp_select_1 == 1) ? {sub_d_temp_b[KERNEL_SIZE_3*(KERNEL_SIZE_3-1)*FEATURE_WIDTH-1 : 0], sub_dia_1_kn3_b}
+                                                                 : sub_d_temp[2*KERNEL_3_BITS - 1 : KERNEL_3_BITS];
+                sub_d_temp[KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 2*KERNEL_3_BITS] <= 0;
                                                 
             end
             default : sub_d_temp <= (d_temp_select_0 == 1) ? {sub_d_temp[KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], sub_dia_0}

@@ -334,7 +334,7 @@ scratchpad_feature_mem #(Tn, KERNEL_SIZE, FEATURE_WIDTH, DATA_BUS_WIDTH) feature
     .wr_mem_line(f_mem_addr_1[3:0]),
     .rd_mem_group(),
     .rd_mem_line(),
-
+    .kn_size_mode(kn_size_mode),
     .i_port(f_mem_data_1),
     .data_out(feature_mem_read_data_1)
 );

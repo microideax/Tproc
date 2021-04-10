@@ -18,11 +18,11 @@ inst template:
 
 weight_mem order: weight -- bias -- scaler
 
-to conv each line, we need 58 instr.
+
 """
+kernel_size = 5
 img_line = 28
 img_column = 28
-kernel_size = 5
 line_buffer_mod = 0 # '0' denotes fetch 5 columns while '1' denotes 1
 Tn = 4 # Tn = 4
 Tm = 8 # Tm = 8
@@ -34,17 +34,12 @@ def reformat_str(value, rjust_0):
 	new_str = hex(value)[2:].rjust(rjust_0,'0')
 	return new_str
 
-def fetch_5_lines(beginning_line, inst_list): #currently only fetch feature channel 0
-	for x in range(kernel_size):
-		inst = "0400" + reformat_str((beginning_line + x)*pxl_num_one_mem_addr, 4) + "00" + reformat_str(x, 2) + "01" + reformat_str(pxl_num_one_mem_addr, 2)
-		inst_list.append(inst)
-		pass
-
-def fetch_line(beginning_line, inst_list): #currently only fetch feature channel 0
-	#let x = 4
-	inst = "0400" + reformat_str((beginning_line + 4)*pxl_num_one_mem_addr, 4) + "00" + reformat_str(4, 2) + "01" + reformat_str(pxl_num_one_mem_addr, 2)
+def kernel_size_conf(kn_size, inst_list):
+	if kn_size == 5:
+		inst = "2000000000000000"
+	else :
+		inst = "2001000000000000"
 	inst_list.append(inst)
-	pass
 
 def fetch_weight(inst_list):
 	for x in range(Tn):
@@ -70,21 +65,58 @@ def vertical_shift(inst_list, mod):
 		inst = "4001010100000000"
 	inst_list.append(inst)
 
+#for kernel_size = 5/3
+def begin_fetch_lines(beginning_line, inst_list): #currently only fetch feature channel 0
+	if kernel_size == 5:
+		for_range = 5
+	elif kernel_size == 3:
+		for_range = 4
+	for x in range(for_range):
+		inst = "0400" + reformat_str((beginning_line + x)*pxl_num_one_mem_addr, 4) + "00" + reformat_str(x, 2) + "01" + reformat_str(pxl_num_one_mem_addr, 2)
+		inst_list.append(inst)
+		pass
+
+#for kernel_size = 5
+def fetch_1_line(beginning_line, inst_list): #currently only fetch feature channel 0
+	#let x = 4
+	x = 4
+	inst = "0400" + reformat_str((beginning_line + x)*pxl_num_one_mem_addr, 4) + "00" + reformat_str(x, 2) + "01" + reformat_str(pxl_num_one_mem_addr, 2)
+	inst_list.append(inst)
+	pass
+
+#for kernel_size = 3
+def fetch_2_lines(beginning_line, inst_list):
+	x = 2
+	inst = "0400" + reformat_str((beginning_line + x)*pxl_num_one_mem_addr, 4) + "00" + reformat_str(x, 2) + "01" + reformat_str(pxl_num_one_mem_addr, 2)
+	inst_list.append(inst)
+	x = 3
+	inst = "0400" + reformat_str((beginning_line + x)*pxl_num_one_mem_addr, 4) + "00" + reformat_str(x, 2) + "01" + reformat_str(pxl_num_one_mem_addr, 2)
+	inst_list.append(inst)
+	pass
+def fetch_line(beginning_line, inst_list, kn_size):
+	if kn_size == 5 :
+		fetch_1_line(beginning_line, inst_list)
+	elif kn_size == 3 :
+		fetch_2_lines(beginning_line, inst_list)
 
 
+
+#main function
+if kernel_size == 5:
+	for_i_range = range(img_line - kernel_size + 1)
+elif kernel_size == 3:
+	for_i_range = range(img_line - kernel_size + 1)[::2]#0 2 4 6 ...
+kernel_size_conf(kernel_size, output_list)
 fetch_weight(output_list)	
 fetch_bias(output_list)
 fetch_scaler(output_list)
-
-
 #feature fetch: ram_depth is 16 so counter can not be larger than 2
-
-for i in range(img_line - kernel_size + 1):
+for i in for_i_range:
 	line_buffer_mod = 0
 	if i == 0:
-		fetch_5_lines(i,output_list)
+		begin_fetch_lines(i,output_list)
 	else:
-		fetch_line(i, output_list)
+		fetch_line(i, output_list, kernel_size)
 	for j in range(img_column - kernel_size + 1):
 		vertical_shift(output_list, line_buffer_mod)
 		CONV_inst(output_list)
@@ -95,6 +127,8 @@ for i in range(img_line - kernel_size + 1):
 	vertical_shift(output_list, line_buffer_mod)
 	vertical_shift(output_list, line_buffer_mod)
 	vertical_shift(output_list, line_buffer_mod)
+pass
+
 
 fileObject = open('i_instr_init.mem', 'w')
 for inst in output_list:
@@ -138,7 +172,7 @@ def reformat_str(value, rjust_0):
 	new_str = hex(value)[2:].rjust(rjust_0,'0')
 	return new_str
 
-def fetch_5_lines(beginning_line, inst_list): #currently only fetch feature channel 0
+def begin_fetch_lines(beginning_line, inst_list): #currently only fetch feature channel 0
 	for x in range(kernel_size):
 		inst = "0400" + reformat_str((beginning_line + x)*pxl_num_one_mem_addr, 4) + "00" + reformat_str(x, 2) + "01" + reformat_str(pxl_num_one_mem_addr, 2)
 		inst_list.append(inst)
@@ -177,7 +211,7 @@ fetch_weight(output_list)
 
 for i in range(img_line - kernel_size + 1):
 	line_buffer_mod = 0
-	fetch_5_lines(i,output_list)
+	begin_fetch_lines(i,output_list)
 	fetch_scaler(i,output_list)
 	for j in range(img_column - kernel_size + 1):
 		vertical_shift(output_list, line_buffer_mod)

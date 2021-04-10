@@ -67,8 +67,8 @@ end
 
 wire virreg_to_fmem_0;
 wire virreg_to_fmem_1;
-wire [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_reg_to_select_array;
-reg [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] virtical_data_reg;
+wire [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] vertical_reg_to_select_array;
+reg [Tn*FEATURE_WIDTH*KERNEL_SIZE*KERNEL_SIZE - 1 : 0] vertical_data_reg;
 wire [Tm*FEATURE_WIDTH - 1 : 0] tm_scaled_feature;
 wire [Tm*16-1 : 0] scaler_reg;
 
@@ -85,19 +85,19 @@ vertical_reg i_vertical_reg(
     .feature_en_1(virreg_to_fmem_1),
     .dia_0(feature_mem_read_data_0),
     .dia_1(feature_mem_read_data_1),
-    .doa(virtical_reg_to_select_array),
+    .doa(vertical_reg_to_select_array),
     .shift_done(shift_done_from_virreg)
 );
 
 always@(posedge clk) begin
   if(rst) begin
-    virtical_data_reg <= 0;
+    vertical_data_reg <= 0;
   end
   else begin
     if(shift_done_from_virreg) begin
-      virtical_data_reg <= virtical_reg_to_select_array;
+      vertical_data_reg <= vertical_reg_to_select_array;
     end else begin
-      virtical_data_reg <= virtical_data_reg;
+      vertical_data_reg <= vertical_data_reg;
     end
   end
 end
@@ -133,7 +133,7 @@ vertical_reg_weight vertical_reg_weight(
 wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] reorder_feature;
 wire [Tn*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 0] reorder_feature_in;
 
-assign reorder_feature_in = virtical_data_reg;
+assign reorder_feature_in = vertical_data_reg;
 
 reorder_feature reorder_feature_1(
   .clk        (clk),
@@ -189,34 +189,64 @@ wire ternary_com_done;
 TnKK_select_array ternary_com_array(
     .clk(clk),
     .rst(rst),
-    .feature_in(virtical_reg_to_select_array),
+    .feature_in(vertical_reg_to_select_array),
     .weight_in(weight_wire),
+    .kn_size_mode(kn_size_mode),
     .enable(sel_array_enable),
     .feature_out(ternary_com_out),
     .ternary_com_done(ternary_com_done)
 );
 
-wire [Tn*FEATURE_WIDTH - 1 : 0] tn_kernel_out;
+////////just for simulation////////
+wire [FEATURE_WIDTH - 1 : 0] ternary_in_test_even [3*3 -1 : 0];
+wire [FEATURE_WIDTH - 1 : 0] ternary_in_test_odd [3*3 -1 : 0];
+wire [FEATURE_WIDTH - 1 : 0] ternary_out_test_even [3*3 -1 : 0];
+wire [FEATURE_WIDTH - 1 : 0] ternary_out_test_odd [3*3 -1 : 0];
+genvar m;
+generate
+  for(m = 0; m < 3*3; m = m + 1) begin
+    assign ternary_in_test_even[m] = vertical_reg_to_select_array[(m + 1)*FEATURE_WIDTH - 1 : m*FEATURE_WIDTH];
+    assign ternary_in_test_odd[m] = vertical_reg_to_select_array[9*FEATURE_WIDTH + (m + 1)*FEATURE_WIDTH - 1 : 9*FEATURE_WIDTH + m*FEATURE_WIDTH];
+    assign ternary_out_test_even[m] = ternary_com_out[(m + 1)*FEATURE_WIDTH - 1 : m*FEATURE_WIDTH];
+    assign ternary_out_test_odd[m] = ternary_com_out[9*FEATURE_WIDTH + (m + 1)*FEATURE_WIDTH - 1 : 9*FEATURE_WIDTH + m*FEATURE_WIDTH];
+  end
+endgenerate
+////////////////////////////////
+
+wire [Tn*FEATURE_WIDTH - 1 : 0] tn_kernel_out_even;
+wire [Tn*FEATURE_WIDTH - 1 : 0] tn_kernel_out_odd;
 wire tn_kernel_done;
 adder_tree_Tn_kernel kernel_adder_tree(
     .fast_clk(clk),
     .rst(rst),
     .enable(ternary_com_done),
+    .kn_size_mode(kn_size_mode),
     .ternery_res_tn(ternary_com_out),
-    .kernel_sum_tn(tn_kernel_out),
+    .kernel_sum_tn_even(tn_kernel_out_even),
+    .kernel_sum_tn_odd(tn_kernel_out_odd),
     .adder_done(tn_kernel_done)
 );
 
-wire [FEATURE_WIDTH-1 : 0] tm_feature_temp;
-wire tn_channel_done;
-adder_tree_tn channel_adder_tree(
+
+wire [FEATURE_WIDTH-1 : 0] tm_feature_temp_even, tm_feature_temp_odd;
+wire tn_channel_done_even, tn_channel_done_odd;
+adder_tree_tn channel_adder_tree_even(
     .fast_clk(clk),
     .rst(rst),
     .enable(tn_kernel_done),
-    .tn_input(tn_kernel_out),
-    .out(tm_feature_temp),
-    .adder_done(tn_channel_done)
+    .tn_input(tn_kernel_out_even),
+    .out(tm_feature_temp_even),
+    .adder_done(tn_channel_done_even)
 );
+adder_tree_tn channel_adder_tree_odd(
+    .fast_clk(clk),
+    .rst(rst),
+    .enable(tn_kernel_done),
+    .tn_input(tn_kernel_out_odd),
+    .out(tm_feature_temp_odd),
+    .adder_done(tn_channel_done_odd)
+);
+
 
 assign scaler_buffer_rd_en = tn_kernel_done;
 always @(posedge clk or posedge rst) begin
@@ -226,18 +256,28 @@ always @(posedge clk or posedge rst) begin
     scaler_addr <= (scaler_buffer_rd_en) ? (scaler_addr + 1) : 0;
   end
 end
-wire [FEATURE_WIDTH-1 : 0] scaled_feature;
-scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) single_feature_scaling_unit (
+wire [FEATURE_WIDTH-1 : 0] scaled_feature_even;
+wire [FEATURE_WIDTH-1 : 0] scaled_feature_odd;
+scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) single_feature_scaling_unit_even (
     .clk(clk),
     .rst(rst),
-    .enable(tn_channel_done),
-    .data_in(tm_feature_temp),
+    .enable(tn_channel_done_even),
+    .data_in(tm_feature_temp_even),
     .scaler_in(scaler_data[15 : 0]),
-    .data_o(scaled_feature)
+    .data_o(scaled_feature_even)
+);
+scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) single_feature_scaling_unit_odd (
+    .clk(clk),
+    .rst(rst),
+    .enable(tn_channel_done_odd),
+    .data_in(tm_feature_temp_odd),
+    .scaler_in(scaler_data[15 : 0]),
+    .data_o(scaled_feature_odd)
 );
 
-wire [FEATURE_WIDTH-1 : 0] biased_feature;
-assign bias_buffer_rd_en = tn_channel_done;
+wire [FEATURE_WIDTH-1 : 0] biased_feature_even;
+wire [FEATURE_WIDTH-1 : 0] biased_feature_odd;
+assign bias_buffer_rd_en = tn_channel_done_even|tn_channel_done_odd;
 always @(posedge clk or posedge rst) begin
   if(rst) begin
     bias_addr <= 0;
@@ -247,14 +287,22 @@ always @(posedge clk or posedge rst) begin
 end
 adder_2in_1out #(
   .FEATURE_WIDTH(FEATURE_WIDTH)
-  )bias_adder_tree(
+  )bias_adder_tree_even(
     .clk(clk),
     .rst(rst),
-    .A1 (scaled_feature),
+    .A1 (scaled_feature_even),
     .B1 (bias_data),
-    .O  (biased_feature)  
+    .O  (biased_feature_even)  
 );
-
+adder_2in_1out #(
+  .FEATURE_WIDTH(FEATURE_WIDTH)
+  )bias_adder_tree_odd(
+    .clk(clk),
+    .rst(rst),
+    .A1 (scaled_feature_odd),
+    .B1 (bias_data),
+    .O  (biased_feature_odd)  
+);
 
 // assign tm_scaled_feature = scaled_feature;
 
@@ -275,6 +323,7 @@ endgenerate
 */
 
 // assign scaled_feature_output[Tm*FEATURE_WIDTH-1 : 0] = tm_scaled_feature[Tm*FEATURE_WIDTH-1 : 0];
+// need to be optimized later
 reg [4:0] tm_buffer_sel_reg, reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7;
 always@(posedge clk or posedge rst)begin
   if(rst) begin
@@ -332,62 +381,47 @@ assign compute_done = conv_done;
 genvar i;
 generate
   for(i=0; i<Tm; i=i+1)begin
-    dp_ram #(.RAM_DEPTH(1024), .ADDR_WIDTH(10), .DATA_WIDTH(FEATURE_WIDTH)) tm_data_buffer(
+    dp_ram #(.RAM_DEPTH(1024), .ADDR_WIDTH(10), .DATA_WIDTH(FEATURE_WIDTH)) tm_data_buffer_even(
       .clk(clk),
       .ena(tm_wr_enable[i+1]),
       .enb(),
       .wea(tm_wr_enable[i+1]),
       .addra(tm_wr_addr),
       .addrb(),
-      .dia(biased_feature),
+      .dia(biased_feature_even),
+      .dob()
+    ); 
+    dp_ram #(.RAM_DEPTH(1024), .ADDR_WIDTH(10), .DATA_WIDTH(FEATURE_WIDTH)) tm_data_buffer_odd(
+      .clk(clk),
+      .ena(tm_wr_enable[i+1]),
+      .enb(),
+      .wea(tm_wr_enable[i+1]),
+      .addra(tm_wr_addr),
+      .addrb(),
+      .dia(biased_feature_odd),
       .dob()
     ); 
   end
 endgenerate
 
 /////////////////////////only for simulation/////////////////////////
-/*
-integer fp_w;
-reg [3:0] mem_count;
-initial begin
-
-  fp_w = $fopen("Tm_1_ram.txt","w");
-  #1800;
-  for (mem_count = 0; mem_count < 8; mem_count = mem_count + 1) begin
-    $fdisplay(fp_w, "%d", scaled_feature);          //%h denotes hex
-    #10;
-  end
-
-  $fclose(fp_w);
-end*/
-
-
-integer fp_w;
+integer fp_w_even, fp_w_odd;
 reg [15:0] cnt_sim;
 initial begin
-  fp_w = $fopen("Tm_0_ram.txt","w");
+  fp_w_even = $fopen("Tm_0_ram_even.txt","w");
+  fp_w_odd = $fopen("Tm_0_ram_odd.txt","w");
   #300000;
-  $fclose(fp_w);
+  $fclose(fp_w_even);
+  $fclose(fp_w_odd);
   //$stop;
 end
 
 always @(posedge tm_wr_enable[1]) begin
   #5;
-  $fdisplay(fp_w, "%d", biased_feature); 
+  $fdisplay(fp_w_even, "%d", biased_feature_even); 
+  $fdisplay(fp_w_odd, "%d", biased_feature_odd); 
   cnt_sim <= cnt_sim + 1;
 end
-
-//always begin
-//  #1000
-//  $fdisplay(fp_w, "%d", biased_feature);
-//end
-
-//always @(cnt_sim) begin
-//  if(cnt_sim == 24*24 - 1) begin
-//    $fclose(fp_w);
-//  end
-//end
-
 endmodule
 
 
