@@ -6,6 +6,9 @@ module TnKK_select_array#(
     parameter Tn = `Tn,
     parameter Tm = `Tm,
     parameter KERNEL_SIZE = `KERNEL_SIZE,
+    parameter KERNEL_SIZE_3 = `KERNEL_SIZE_3,
+    parameter KERNEL_SIZE_5_MODE = `KERNEL_SIZE_5_MODE,
+    parameter KERNEL_SIZE_3_MODE = `KERNEL_SIZE_3_MODE,
     parameter KERNEL_WIDTH = `KERNEL_WIDTH,
     parameter SCALER_WIDTH = `SCALER_WIDTH,
     parameter FEATURE_WIDTH = `FEATURE_WIDTH, 
@@ -16,6 +19,7 @@ module TnKK_select_array#(
     input wire [Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0] feature_in,
     input wire [Tn * KERNEL_SIZE * KERNEL_SIZE * KERNEL_WIDTH - 1 : 0 ]    weight_in,
     input wire enable,
+    input wire kn_size_mode,
     output reg [Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 : 0] feature_out,
     output reg ternary_com_done
 );
@@ -26,20 +30,33 @@ wire [FEATURE_WIDTH - 1 : 0] feature_in_wire [Tn * KERNEL_SIZE * KERNEL_SIZE - 1
 //wire [FEATURE_WIDTH - 1 : 0] feature_reorder [Tn * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
 wire [KERNEL_WIDTH - 1 : 0] weight_in_wire [Tn * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
 
-wire [FEATURE_WIDTH - 1 : 0] temp_feature [Tn * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
+wire [FEATURE_WIDTH - 1 : 0] temp_feature_kn5 [Tn * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
+wire [FEATURE_WIDTH - 1 : 0] temp_feature_kn3 [Tn * KERNEL_SIZE * KERNEL_SIZE - 1 : 0];
 
 genvar i;
+
 generate
-    for(i = 0; i < Tn * KERNEL_SIZE * KERNEL_SIZE; i = i+1) begin: feature_select_arrya
+    for(i = 0; i < Tn * KERNEL_SIZE * KERNEL_SIZE; i = i+1) begin: feature_select_array
         assign feature_in_wire[i] = feature_in[(i+1)*FEATURE_WIDTH-1:i*FEATURE_WIDTH];
-        //assign feature_reorder[i] = feature_in[((i%25/5) + 5 * (i/25) + 20 * (i%5)+1)*FEATURE_WIDTH-1:((i%25/5) + 5 * (i/25) + 20 * (i%5))*FEATURE_WIDTH];
-        //assign feature_reorder[i] = feature_in[(i+1)*FEATURE_WIDTH-1:i*FEATURE_WIDTH];
         assign weight_in_wire[i] = weight_in[(i+1)*KERNEL_WIDTH-1:i*KERNEL_WIDTH];
-        //assign temp_feature[i] = feature_in_wire[i] * weight_in_wire[i];
-        assign temp_feature[i] = (weight_in_wire[i] == 2'b01) ? feature_in_wire[i]
+        assign temp_feature_kn5[i] = (weight_in_wire[i] == 2'b01) ? feature_in_wire[i]
                                : (weight_in_wire[i] == 2'b11) ? ((~feature_in_wire[i]) + 1)
                                : 0;
-        assign temp_feature_out[(i+1)*FEATURE_WIDTH-1 : i*FEATURE_WIDTH] = temp_feature[i];
+
+        if (i%(KERNEL_SIZE*KERNEL_SIZE) < KERNEL_SIZE_3 * KERNEL_SIZE_3) begin
+            assign temp_feature_kn3[i] = (weight_in_wire[i] == 2'b01) ? feature_in_wire[i]
+                                       : (weight_in_wire[i] == 2'b11) ? ((~feature_in_wire[i]) + 1)
+                                       : 0;
+        end else
+        if (i%(KERNEL_SIZE*KERNEL_SIZE) < 2 * KERNEL_SIZE_3 * KERNEL_SIZE_3) begin
+            assign temp_feature_kn3[i] = (weight_in_wire[i-KERNEL_SIZE_3*KERNEL_SIZE_3] == 2'b01) ? feature_in_wire[i]
+                                       : (weight_in_wire[i-KERNEL_SIZE_3*KERNEL_SIZE_3] == 2'b11) ? ((~feature_in_wire[i]) + 1)
+                                       : 0;
+        end else begin
+            assign temp_feature_kn3[i] = 0;
+        end
+
+        assign temp_feature_out[(i+1)*FEATURE_WIDTH-1 : i*FEATURE_WIDTH] = (kn_size_mode == KERNEL_SIZE_5_MODE) ? temp_feature_kn5[i] : temp_feature_kn3[i];
     end
 endgenerate
 

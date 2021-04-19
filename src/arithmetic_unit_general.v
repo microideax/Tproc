@@ -150,6 +150,127 @@ endmodule
 
 
 
+module adder_tree_single_kernel_new #(
+    parameter FEATURE_WIDTH = `FEATURE_WIDTH,
+    parameter KERNEL_SIZE = `KERNEL_SIZE,
+    parameter KERNEL_SIZE_3 = `KERNEL_SIZE_3,
+    parameter KERNEL_SIZE_5_MODE = `KERNEL_SIZE_5_MODE,
+    parameter KERNEL_SIZE_3_MODE = `KERNEL_SIZE_5_MODE,
+    parameter ADDER_ROW = KERNEL_SIZE*KERNEL_SIZE
+) (
+    input wire fast_clk,
+    input wire rst,
+    input wire [KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 :0] ternery_res,
+    input wire kn_size_mode,
+    output wire [FEATURE_WIDTH - 1 : 0] kernel_sum_even,
+    output wire [FEATURE_WIDTH - 1 : 0] kernel_sum_odd
+);
+
+/////////layer 0
+wire [KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH-1 : 0] input_kernel_0, input_kernel_1; //two 3*3 kernel
+wire [(KERNEL_SIZE*KERNEL_SIZE-2*KERNEL_SIZE_3*KERNEL_SIZE_3)*FEATURE_WIDTH-1 : 0] input_discard;//7 values, discarded in kn=3 mode
+assign input_kernel_0 = ternery_res[KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH-1 : 0];
+assign input_kernel_1 = ternery_res[2*KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH-1 : KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH];
+assign input_discard = ternery_res[KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 2*KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH];
+wire [4*FEATURE_WIDTH - 1 : 0] layer0_kernel_0,layer0_kernel_1, layer0_discard;
+genvar i;
+//kernel 0
+generate
+    for(i = 0; i < 2; i=i+1) begin
+        adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1_kn0_l0 (
+            .clk(fast_clk),
+            .rst(rst),
+            .A1(input_kernel_0[(1+i*4)*FEATURE_WIDTH-1 : i*4*FEATURE_WIDTH]),
+            .B1(input_kernel_0[(2+i*4)*FEATURE_WIDTH-1 : (1+i*4)*FEATURE_WIDTH]),
+            .A2(input_kernel_0[(3+i*4)*FEATURE_WIDTH-1 : (2+i*4)*FEATURE_WIDTH]),
+            .B2(input_kernel_0[(4+i*4)*FEATURE_WIDTH-1 : (3+i*4)*FEATURE_WIDTH]),
+            .O(layer0_kernel_0[(1+i)*FEATURE_WIDTH-1 : i*FEATURE_WIDTH])
+        );  
+    end
+endgenerate
+register_x1 #(.FEATURE_WIDTH(FEATURE_WIDTH)) lat_kn0_l0(.clk(fast_clk), .rst(rst), .in_data(input_kernel_0[9*FEATURE_WIDTH-1:8*FEATURE_WIDTH]), .o_data(layer0_kernel_0[3*FEATURE_WIDTH-1 : 2*FEATURE_WIDTH]));
+assign layer0_kernel_0[4*FEATURE_WIDTH-1 : 3*FEATURE_WIDTH] = 0;
+//kernel 1
+generate
+    for(i = 0; i < 2; i=i+1) begin
+        adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1_kn1_l0 (
+            .clk(fast_clk),
+            .rst(rst),
+            .A1(input_kernel_1[(1+i*4)*FEATURE_WIDTH-1 : i*4*FEATURE_WIDTH]),
+            .B1(input_kernel_1[(2+i*4)*FEATURE_WIDTH-1 : (1+i*4)*FEATURE_WIDTH]),
+            .A2(input_kernel_1[(3+i*4)*FEATURE_WIDTH-1 : (2+i*4)*FEATURE_WIDTH]),
+            .B2(input_kernel_1[(4+i*4)*FEATURE_WIDTH-1 : (3+i*4)*FEATURE_WIDTH]),
+            .O(layer0_kernel_1[(1+i)*FEATURE_WIDTH-1 : i*FEATURE_WIDTH])
+        );  
+    end
+endgenerate
+register_x1 #(.FEATURE_WIDTH(FEATURE_WIDTH)) lat_kn1_l0(.clk(fast_clk), .rst(rst), .in_data(input_kernel_1[9*FEATURE_WIDTH-1:8*FEATURE_WIDTH]), .o_data(layer0_kernel_1[3*FEATURE_WIDTH-1 : 2*FEATURE_WIDTH]));
+assign layer0_kernel_1[4*FEATURE_WIDTH-1 : 3*FEATURE_WIDTH] = 0;
+//discard
+wire [FEATURE_WIDTH-1 : 0] zero_wire;
+assign zero_wire = 0;
+adder_2Nin_Nout #(.FEATURE_WIDTH(`FEATURE_WIDTH), .CHANNEL_NUM(4)) adder_8_in_4_out_disc_l0 (
+    .fast_clk(fast_clk),
+    .rst(rst),
+    .A_INPUT(input_discard[4*FEATURE_WIDTH - 1 : 0]),
+    .B_INPUT({zero_wire, input_discard[7*FEATURE_WIDTH - 1 : 4*FEATURE_WIDTH]}),
+    .O_OUTPUT(layer0_discard)
+);
+//////////layer1
+wire [FEATURE_WIDTH-1 : 0] layer1_discard, layer1_kernel_0, layer1_kernel_1;
+adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1_kn0_l1 (
+    .clk(fast_clk),
+    .rst(rst),
+    .A1(layer0_kernel_0[FEATURE_WIDTH-1:0]),
+    .B1(layer0_kernel_0[2*FEATURE_WIDTH-1:FEATURE_WIDTH]),
+    .A2(layer0_kernel_0[3*FEATURE_WIDTH-1:2*FEATURE_WIDTH]),
+    .B2(layer0_kernel_0[4*FEATURE_WIDTH-1:3*FEATURE_WIDTH]),
+    .O(layer1_kernel_0)
+);
+adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1_kn1_l1 (
+    .clk(fast_clk),
+    .rst(rst),
+    .A1(layer0_kernel_1[FEATURE_WIDTH-1:0]),
+    .B1(layer0_kernel_1[2*FEATURE_WIDTH-1:FEATURE_WIDTH]),
+    .A2(layer0_kernel_1[3*FEATURE_WIDTH-1:2*FEATURE_WIDTH]),
+    .B2(layer0_kernel_1[4*FEATURE_WIDTH-1:3*FEATURE_WIDTH]),
+    .O(layer1_kernel_1)
+);
+adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1_disc_l1 (
+    .clk(fast_clk),
+    .rst(rst),
+    .A1(layer0_discard[FEATURE_WIDTH-1:0]),
+    .B1(layer0_discard[2*FEATURE_WIDTH-1:FEATURE_WIDTH]),
+    .A2(layer0_discard[3*FEATURE_WIDTH-1:2*FEATURE_WIDTH]),
+    .B2(layer0_discard[4*FEATURE_WIDTH-1:3*FEATURE_WIDTH]),
+    .O(layer1_discard)
+);
+/////////layer2
+wire [FEATURE_WIDTH-1 : 0] kn_size_5_out_temp, layer2_kernel_0, layer2_kernel_1;
+register_x1 #(.FEATURE_WIDTH(FEATURE_WIDTH)) lat_kn0_l2(.clk(fast_clk), .rst(rst), .in_data(layer1_kernel_0), .o_data(layer2_kernel_0));
+register_x1 #(.FEATURE_WIDTH(FEATURE_WIDTH)) lat_kn1_l2(.clk(fast_clk), .rst(rst), .in_data(layer1_kernel_1), .o_data(layer2_kernel_1));
+adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1_kn_size_5 (
+    .clk(fast_clk),
+    .rst(rst),
+    .A1(layer1_kernel_0),
+    .B1(layer1_kernel_1),
+    .A2(layer1_discard),
+    .B2(0),
+    .O(kn_size_5_out_temp)
+);
+/////////layer3
+wire [FEATURE_WIDTH-1 : 0] kn_size_5_out, kn_size_3_even, kn_size_3_odd;
+register_x1 #(.FEATURE_WIDTH(FEATURE_WIDTH)) lat_kns3_even(.clk(fast_clk), .rst(rst), .in_data(layer2_kernel_0), .o_data(kn_size_3_even));
+register_x1 #(.FEATURE_WIDTH(FEATURE_WIDTH)) lat_kns3_odd(.clk(fast_clk), .rst(rst), .in_data(layer2_kernel_1), .o_data(kn_size_3_odd));
+register_x1 #(.FEATURE_WIDTH(FEATURE_WIDTH)) lat_kns5_out(.clk(fast_clk), .rst(rst), .in_data(kn_size_5_out_temp), .o_data(kn_size_5_out));
+/////////switch
+assign kernel_sum_even = (kn_size_mode == KERNEL_SIZE_5_MODE) ? kn_size_5_out : kn_size_3_even;
+assign kernel_sum_odd = (kn_size_mode == KERNEL_SIZE_5_MODE) ? 0 : kn_size_3_odd;
+
+endmodule
+
+
+
 module adder_tree_single_kernel #(
     parameter FEATURE_WIDTH = `FEATURE_WIDTH,
     parameter KERNEL_SIZE = `KERNEL_SIZE,
@@ -223,6 +344,9 @@ adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1 (
 endmodule
 
 
+
+
+
 module adder_tree_Tn_kernel #(
     parameter Tn = `Tn,
     parameter FEATURE_WIDTH = `FEATURE_WIDTH,
@@ -232,8 +356,10 @@ module adder_tree_Tn_kernel #(
     input wire fast_clk,
     input wire rst,
     input wire enable,
+    input wire kn_size_mode,
     input wire [Tn * KERNEL_SIZE * KERNEL_SIZE * FEATURE_WIDTH - 1 :0] ternery_res_tn,
-    output wire [Tn * FEATURE_WIDTH - 1 : 0] kernel_sum_tn,
+    output wire [Tn * FEATURE_WIDTH - 1 : 0] kernel_sum_tn_even,
+    output wire [Tn * FEATURE_WIDTH - 1 : 0] kernel_sum_tn_odd,
     output wire adder_done
 );
 
@@ -250,16 +376,21 @@ assign adder_done = lat_4_enable;
 genvar i;
 generate
     for(i=0; i<Tn; i=i+1)begin
-        adder_tree_single_kernel kernel_adder(
+        adder_tree_single_kernel_new kernel_adder(
             .fast_clk(fast_clk),
             .rst(rst),
+            .kn_size_mode(kn_size_mode),
             .ternery_res(ternery_res_tn[(i+1)*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : i*KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH]),
-            .kernel_sum(kernel_sum_tn[(i+1)*FEATURE_WIDTH-1 : i*FEATURE_WIDTH])
+            .kernel_sum_even(kernel_sum_tn_even[(i+1)*FEATURE_WIDTH-1 : i*FEATURE_WIDTH]),
+            .kernel_sum_odd(kernel_sum_tn_odd[(i+1)*FEATURE_WIDTH-1 : i*FEATURE_WIDTH])
         );
     end
 endgenerate
 
 endmodule
+
+
+
 
 
 module adder_tree_tn #(

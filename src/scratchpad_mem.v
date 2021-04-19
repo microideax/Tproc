@@ -179,8 +179,6 @@ endmodule
 module line_shift_buffer_array #(
     parameter FEATURE_WIDTH = `FEATURE_WIDTH, // 16 bits
     parameter DATA_BUS_WIDTH = `DATA_BUS_WIDTH, // 128 bits
-    parameter BUFFER_DEPTH_LOG2 = $clog2(DATA_BUS_WIDTH/FEATURE_WIDTH), // 3 bits
-    parameter BUFFER_DEPTH = DATA_BUS_WIDTH/FEATURE_WIDTH, // 8
     parameter KERNEL_SIZE = `KERNEL_SIZE,
     parameter KERNEL_SIZE_5_MODE = `KERNEL_SIZE_5_MODE,
     parameter KERNEL_SIZE_3_MODE = `KERNEL_SIZE_3_MODE
@@ -191,23 +189,26 @@ module line_shift_buffer_array #(
     input wire [KERNEL_SIZE - 1 : 0] spad_rd_en, // former spad's rd_en  (row 1, 2, 3, 4)
     input wire [(KERNEL_SIZE - 1) * FEATURE_WIDTH - 1 : 0] data_in,//row 1, 2, 3, 4
     output reg [(KERNEL_SIZE - 1) * DATA_BUS_WIDTH - 1 : 0] data_out,//row 0, 1, 2, 3
-    output wire [KERNEL_SIZE - 1 : 0] wr_en
+    output reg [KERNEL_SIZE - 2 : 0] wr_en
 );
 
 reg [(KERNEL_SIZE - 1) * FEATURE_WIDTH - 1 : 0] data_in_inter;
 wire [(KERNEL_SIZE - 1) * DATA_BUS_WIDTH - 1 : 0] data_out_inter;
-
+wire [KERNEL_SIZE - 2 : 0] wr_en_buffer;
 always @(*) begin
     case (kn_size_mode)
         KERNEL_SIZE_5_MODE : begin
             data_in_inter = data_in;
             data_out = data_out_inter;
+            wr_en = wr_en_buffer;
         end
         KERNEL_SIZE_3_MODE : begin
             data_in_inter[FEATURE_WIDTH - 1 : 0] = data_in[2*FEATURE_WIDTH - 1 : FEATURE_WIDTH];
-            data_in_inter[2*FEATURE_WIDTH - 1 : FEATURE_WIDTH] = data_in[4*FEATURE_WIDTH - 1 : 3*FEATURE_WIDTH];
+            data_in_inter[2*FEATURE_WIDTH - 1 : FEATURE_WIDTH] = data_in[3*FEATURE_WIDTH - 1 : 2*FEATURE_WIDTH];
             data_in_inter[4*FEATURE_WIDTH - 1 : 2*FEATURE_WIDTH] = 0;
             data_out = data_out_inter;
+            wr_en[1:0] = wr_en_buffer[1:0];
+            wr_en[3:2] = 0;
         end
         default : begin
             data_in_inter = data_in;
@@ -225,7 +226,7 @@ generate
             .spad_rd_en(spad_rd_en[i]),
             .data_in   (data_in_inter[(i+1)*FEATURE_WIDTH - 1 : i*FEATURE_WIDTH]),
             .data_out  (data_out_inter[(i+1)*DATA_BUS_WIDTH - 1 : i*DATA_BUS_WIDTH]),
-            .wr_en     (wr_en[i])
+            .wr_en     (wr_en_buffer[i])
         );
     end
 endgenerate
