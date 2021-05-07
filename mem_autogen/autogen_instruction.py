@@ -20,7 +20,7 @@ weight_mem order: weight -- bias -- scaler
 
 
 """
-kernel_size = 5
+kernel_size = 1
 img_line = 28
 img_column = 28
 line_buffer_mod = 0 # '0' denotes fetch 5 columns while '1' denotes 1
@@ -37,8 +37,12 @@ def reformat_str(value, rjust_0):
 def kernel_size_conf(kn_size, inst_list):
 	if kn_size == 5:
 		inst = "2000000000000000"
-	else :
+	elif kn_size == 3 :
 		inst = "2001000000000000"
+	elif kn_size == 1 :
+		inst = "2002000000000000"
+	else:
+		inst = "2000000000000000"
 	inst_list.append(inst)
 
 def fetch_weight(inst_list):
@@ -76,6 +80,13 @@ def begin_fetch_lines(beginning_line, inst_list): #currently only fetch feature 
 		inst_list.append(inst)
 		pass
 
+def fetch_5_lines(beginning_line, inst_list): #currently only fetch feature channel 0
+	for_range = 5
+	for x in range(for_range):
+		inst = "0400" + reformat_str((beginning_line + x)*pxl_num_one_mem_addr, 4) + "00" + reformat_str(x, 2) + "01" + reformat_str(pxl_num_one_mem_addr, 2)
+		inst_list.append(inst)
+		pass
+
 #for kernel_size = 5
 def fetch_1_line(beginning_line, inst_list): #currently only fetch feature channel 0
 	#let x = 4
@@ -93,44 +104,84 @@ def fetch_2_lines(beginning_line, inst_list):
 	inst = "0400" + reformat_str((beginning_line + x)*pxl_num_one_mem_addr, 4) + "00" + reformat_str(x, 2) + "01" + reformat_str(pxl_num_one_mem_addr, 2)
 	inst_list.append(inst)
 	pass
+
 def fetch_line(beginning_line, inst_list, kn_size):
 	if kn_size == 5 :
 		fetch_1_line(beginning_line, inst_list)
 	elif kn_size == 3 :
 		fetch_2_lines(beginning_line, inst_list)
 
+def fetch_1_line_src_dst(source_line, destionation_buffer, inst_list): #currently only fetch feature channel 0
+	#let x = 4
+	x = 4
+	inst = "0400" + reformat_str(source_line*pxl_num_one_mem_addr, 4) + "00" + reformat_str(destionation_buffer, 2) + "01" + reformat_str(pxl_num_one_mem_addr, 2)
+	inst_list.append(inst)
+	pass
+
 
 
 #main function
-if kernel_size == 5:
-	for_i_range = range(img_line - kernel_size + 1)
-elif kernel_size == 3:
-	for_i_range = range(img_line - kernel_size + 1)[::2]#0 2 4 6 ...
-kernel_size_conf(kernel_size, output_list)
-fetch_weight(output_list)	
-fetch_bias(output_list)
-fetch_scaler(output_list)
-#feature fetch: ram_depth is 16 so counter can not be larger than 2
-for i in for_i_range:
-	line_buffer_mod = 0
-	if i == 0:
-		begin_fetch_lines(i,output_list)
-	else:
-		fetch_line(i, output_list, kernel_size)
-	for j in range(img_column - kernel_size + 1):
+if (kernel_size == 5 or kernel_size == 3):
+	if kernel_size == 5:
+		for_i_range = range(img_line - kernel_size + 1)
+	elif kernel_size == 3:
+		for_i_range = range(img_line - kernel_size + 1)[::2]#0 2 4 6 ...
+	kernel_size_conf(kernel_size, output_list)
+	fetch_weight(output_list)	
+	fetch_bias(output_list)
+	fetch_scaler(output_list)
+	#feature fetch: ram_depth is 16 so counter can not be larger than 2
+	for i in for_i_range:
+		line_buffer_mod = 0
+		if i == 0:
+			begin_fetch_lines(i,output_list)
+		else:
+			fetch_line(i, output_list, kernel_size)
+		for j in range(img_column - kernel_size + 1):
+			vertical_shift(output_list, line_buffer_mod)
+			CONV_inst(output_list)
+			line_buffer_mod = 1
 		vertical_shift(output_list, line_buffer_mod)
-		CONV_inst(output_list)
-		line_buffer_mod = 1
-		pass
-	pass
-	vertical_shift(output_list, line_buffer_mod)
-	vertical_shift(output_list, line_buffer_mod)
-	vertical_shift(output_list, line_buffer_mod)
-	vertical_shift(output_list, line_buffer_mod)
-pass
+		vertical_shift(output_list, line_buffer_mod)
+		vertical_shift(output_list, line_buffer_mod)
+		vertical_shift(output_list, line_buffer_mod)
 
 
-fileObject = open('i_instr_init.mem', 'w')
+elif kernel_size == 1 :
+	kernel_size_conf(kernel_size, output_list)
+	fetch_weight(output_list)	
+	fetch_bias(output_list)
+	fetch_scaler(output_list)
+	lines_have_remainder = ((img_line%5) > 0) #have remainder:1, don't have:0
+	column_have_remainder = ((img_column%5) > 0) #have remainder:1, don't have:0
+
+	for i in range(img_line//5): #round up to a integer
+		fetch_5_lines(i*5, output_list)
+		for j in range(img_column//5 + column_have_remainder):
+			line_buffer_mod = 0
+			vertical_shift(output_list, line_buffer_mod)
+			CONV_inst(output_list)
+		for k in range(4*8-5*(img_column//5 + column_have_remainder)):#column remainder part
+			line_buffer_mod = 1
+			vertical_shift(output_list, line_buffer_mod)
+
+	if lines_have_remainder:#line remainder part
+		for l in range(img_line%5):
+			fetch_1_line_src_dst(l+img_line//5*5, l, output_list)
+		#for m in range(5-img_line%5):
+		#	fetch_1_line_src_dst(0, img_line%5+m, output_list)#fetch all-zero line to pad image
+		for j in range(img_column//5 + column_have_remainder):
+			line_buffer_mod = 0
+			vertical_shift(output_list, line_buffer_mod)
+			CONV_inst(output_list)
+		for k in range(4*8-5*(img_column//5 + column_have_remainder)):
+			line_buffer_mod = 1
+			vertical_shift(output_list, line_buffer_mod)
+
+
+
+
+fileObject = open('i_instr_init_kn1.mem', 'w')
 for inst in output_list:
 	#print(output_list[l])
 	fileObject.write(inst)

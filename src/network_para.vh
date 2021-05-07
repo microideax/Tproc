@@ -28,3 +28,4 @@
 `define KERNEL_SIZE_3                   3
 `define KERNEL_SIZE_5_MODE              0
 `define KERNEL_SIZE_3_MODE              1
+`define KERNEL_SIZE_1_MODE              2

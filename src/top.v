@@ -64,8 +64,8 @@ wire [63:0] fetcher_to_imem;
 wire [4:0]  i_mem_addr_in;
 wire i_mem_empty;
 wire i_mem_full;
-wire kn_size_mode;
-wire kn_size_mode_config;
+wire [1:0] kn_size_mode;
+wire [1:0] kn_size_mode_config;
 wire kn_config_enable;
 
 instr_fetch instruction_fetcher(
