@@ -168,12 +168,13 @@ module adder_tree_single_kernel_new #(
     output wire [6*FEATURE_WIDTH - 1 : 0] kernel_size_1_out // kn1 out
 );
 
+
 /////////layer 0
-wire [KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH-1 : 0] input_kernel_0, input_kernel_1; //two 3*3 kernel
-wire [(KERNEL_SIZE*KERNEL_SIZE-2*KERNEL_SIZE_3*KERNEL_SIZE_3)*FEATURE_WIDTH-1 : 0] input_discard;//7 values, discarded in kn=3 mode
-assign input_kernel_0 = ternery_res[KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH-1 : 0];
-assign input_kernel_1 = ternery_res[2*KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH-1 : KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH];
-assign input_discard = ternery_res[KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH-1 : 2*KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH];
+wire [3*3*FEATURE_WIDTH-1 : 0] input_kernel_0, input_kernel_1; //two 3*3 kernel
+wire [(5*5-2*3*3)*FEATURE_WIDTH-1 : 0] input_discard;//7 values, discarded in kn=3 mode
+assign input_kernel_0 = (kn_size_mode != KERNEL_SIZE_1_MODE) ? ternery_res[3*3*FEATURE_WIDTH-1 : 0] : ternery_res[2*4*FEATURE_WIDTH-1 : 0];
+assign input_kernel_1 = (kn_size_mode != KERNEL_SIZE_1_MODE) ? ternery_res[2*3*3*FEATURE_WIDTH-1 : 3*3*FEATURE_WIDTH] : ternery_res[4*4*FEATURE_WIDTH-1 : 2*4*FEATURE_WIDTH];
+assign input_discard = ternery_res[5*5*FEATURE_WIDTH-1 : 2*3*3*FEATURE_WIDTH];
 wire [4*FEATURE_WIDTH - 1 : 0] layer0_kernel_0,layer0_kernel_1, layer0_discard;
 genvar i;
 //kernel 0
@@ -218,24 +219,28 @@ adder_2Nin_Nout #(.FEATURE_WIDTH(`FEATURE_WIDTH), .CHANNEL_NUM(4)) adder_8_in_4_
     .B_INPUT({zero_wire, input_discard[7*FEATURE_WIDTH - 1 : 4*FEATURE_WIDTH]}),
     .O_OUTPUT(layer0_discard)
 );
+
 //////////layer1
 wire [FEATURE_WIDTH-1 : 0] layer1_discard, layer1_kernel_0, layer1_kernel_1;
+wire [4*FEATURE_WIDTH-1 : 0] layer1_kernel_0_in, layer1_kernel_1_in;
+assign layer1_kernel_0_in = (kn_size_mode != KERNEL_SIZE_1_MODE) ? layer0_kernel_0 : ternery_res[5*4*FEATURE_WIDTH-1 : 4*4*FEATURE_WIDTH];
+assign layer1_kernel_1_in = (kn_size_mode != KERNEL_SIZE_1_MODE) ? layer0_kernel_1 : ternery_res[6*4*FEATURE_WIDTH-1 : 5*4*FEATURE_WIDTH];
 adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1_kn0_l1 (
     .clk(fast_clk),
     .rst(rst),
-    .A1(layer0_kernel_0[FEATURE_WIDTH-1:0]),
-    .B1(layer0_kernel_0[2*FEATURE_WIDTH-1:FEATURE_WIDTH]),
-    .A2(layer0_kernel_0[3*FEATURE_WIDTH-1:2*FEATURE_WIDTH]),
-    .B2(layer0_kernel_0[4*FEATURE_WIDTH-1:3*FEATURE_WIDTH]),
+    .A1(layer1_kernel_0_in[FEATURE_WIDTH-1:0]),
+    .B1(layer1_kernel_0_in[2*FEATURE_WIDTH-1:FEATURE_WIDTH]),
+    .A2(layer1_kernel_0_in[3*FEATURE_WIDTH-1:2*FEATURE_WIDTH]),
+    .B2(layer1_kernel_0_in[4*FEATURE_WIDTH-1:3*FEATURE_WIDTH]),
     .O(layer1_kernel_0)
 );
 adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1_kn1_l1 (
     .clk(fast_clk),
     .rst(rst),
-    .A1(layer0_kernel_1[FEATURE_WIDTH-1:0]),
-    .B1(layer0_kernel_1[2*FEATURE_WIDTH-1:FEATURE_WIDTH]),
-    .A2(layer0_kernel_1[3*FEATURE_WIDTH-1:2*FEATURE_WIDTH]),
-    .B2(layer0_kernel_1[4*FEATURE_WIDTH-1:3*FEATURE_WIDTH]),
+    .A1(layer1_kernel_1_in[FEATURE_WIDTH-1:0]),
+    .B1(layer1_kernel_1_in[2*FEATURE_WIDTH-1:FEATURE_WIDTH]),
+    .A2(layer1_kernel_1_in[3*FEATURE_WIDTH-1:2*FEATURE_WIDTH]),
+    .B2(layer1_kernel_1_in[4*FEATURE_WIDTH-1:3*FEATURE_WIDTH]),
     .O(layer1_kernel_1)
 );
 adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1_disc_l1 (
@@ -247,6 +252,7 @@ adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1_disc_l1 (
     .B2(layer0_discard[4*FEATURE_WIDTH-1:3*FEATURE_WIDTH]),
     .O(layer1_discard)
 );
+
 /////////layer2
 wire [FEATURE_WIDTH-1 : 0] kn_size_5_out_temp, layer2_kernel_0, layer2_kernel_1;
 register_x1 #(.FEATURE_WIDTH(FEATURE_WIDTH)) lat_kn0_l2(.clk(fast_clk), .rst(rst), .in_data(layer1_kernel_0), .o_data(layer2_kernel_0));
@@ -260,43 +266,35 @@ adder_4in_1out #(FEATURE_WIDTH) adder_4_to_1_kn_size_5 (
     .B2(0),
     .O(kn_size_5_out_temp)
 );
+
 /////////layer3
 wire [FEATURE_WIDTH-1 : 0] kn_size_5_out, kn_size_3_even, kn_size_3_odd;
 register_x1 #(.FEATURE_WIDTH(FEATURE_WIDTH)) lat_kns3_even(.clk(fast_clk), .rst(rst), .in_data(layer2_kernel_0), .o_data(kn_size_3_even));
 register_x1 #(.FEATURE_WIDTH(FEATURE_WIDTH)) lat_kns3_odd(.clk(fast_clk), .rst(rst), .in_data(layer2_kernel_1), .o_data(kn_size_3_odd));
 register_x1 #(.FEATURE_WIDTH(FEATURE_WIDTH)) lat_kns5_out(.clk(fast_clk), .rst(rst), .in_data(kn_size_5_out_temp), .o_data(kn_size_5_out));
 
-/////////seperately, only for kernel_size=1
-//wire [25*FEATURE_WIDTH - 1 : 0] kn_size_1_out;
-//adder_2Nin_Nout #(.FEATURE_WIDTH(`FEATURE_WIDTH), .CHANNEL_NUM(28)) adder_56_in_28_out (
-//    .fast_clk(fast_clk),
-//    .rst(rst),
-//    .A_INPUT(ternery_res[25*FEATURE_WIDTH - 1 : 0]),
-//    .B_INPUT(ternery_res[50*FEATURE_WIDTH - 1 : 25*FEATURE_WIDTH]),
-//    .O_OUTPUT(kn_size_1_out)
-//);
-wire [6*FEATURE_WIDTH - 1 : 0] kn_size_1_out;
-genvar k;
-generate
-    for (k = 0; k < 6; k = k + 1) begin
-        adder_4in_1out #(FEATURE_WIDTH) addertree_kn1 (
-            .clk(fast_clk),
-            .rst(rst),
-            .A1(ternery_res[(4*k+1)*FEATURE_WIDTH-1 : 4*k*FEATURE_WIDTH]),
-            .B1(ternery_res[(4*k+2)*FEATURE_WIDTH-1 : (4*k+1)*FEATURE_WIDTH]),
-            .A2(ternery_res[(4*k+3)*FEATURE_WIDTH-1 : (4*k+2)*FEATURE_WIDTH]),
-            .B2(ternery_res[(4*k+4)*FEATURE_WIDTH-1 : (4*k+3)*FEATURE_WIDTH]),
-            .O(kn_size_1_out[(k+1)*FEATURE_WIDTH-1 : k*FEATURE_WIDTH])
-        );
-    end
-endgenerate
+//wire [6*FEATURE_WIDTH - 1 : 0] kn_size_1_out;
+//genvar k;
+//generate
+//    for (k = 0; k < 6; k = k + 1) begin
+//        adder_4in_1out #(FEATURE_WIDTH) addertree_kn1 (
+//            .clk(fast_clk),
+//            .rst(rst),
+//            .A1(ternery_res[(4*k+1)*FEATURE_WIDTH-1 : 4*k*FEATURE_WIDTH]),
+//            .B1(ternery_res[(4*k+2)*FEATURE_WIDTH-1 : (4*k+1)*FEATURE_WIDTH]),
+//            .A2(ternery_res[(4*k+3)*FEATURE_WIDTH-1 : (4*k+2)*FEATURE_WIDTH]),
+//            .B2(ternery_res[(4*k+4)*FEATURE_WIDTH-1 : (4*k+3)*FEATURE_WIDTH]),
+//            .O(kn_size_1_out[(k+1)*FEATURE_WIDTH-1 : k*FEATURE_WIDTH])
+//        );
+//    end
+//endgenerate
 
 /////////switch
 assign kernel_sum_even = (kn_size_mode == KERNEL_SIZE_5_MODE) ? kn_size_5_out
                        : (kn_size_mode == KERNEL_SIZE_3_MODE) ? kn_size_3_even
                        : 0; //default is 0
 assign kernel_sum_odd = (kn_size_mode == KERNEL_SIZE_3_MODE) ? kn_size_3_odd : 0;
-assign kernel_size_1_out = (kn_size_mode == KERNEL_SIZE_1_MODE) ? kn_size_1_out : 0;
+assign kernel_size_1_out = (kn_size_mode == KERNEL_SIZE_1_MODE) ? {layer1_kernel_1, layer1_kernel_0, layer0_kernel_1[2*FEATURE_WIDTH-1:0], layer0_kernel_0[2*FEATURE_WIDTH-1:0]} : 0;
 
 endmodule
 
