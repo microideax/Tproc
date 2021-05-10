@@ -20,7 +20,7 @@ module scratchpad_mem#(
     input wire [DATA_BUS_WIDTH-1: 0] i_data,
     input wire wr_en,
     input wire rd_en,
-    input wire kn_size_mode,
+    input wire [1:0] kn_size_mode,
     
     output wire [FEATURE_WIDTH*KERNEL_SIZE-1: 0] data_out,
     output wire group_empty,
@@ -181,11 +181,12 @@ module line_shift_buffer_array #(
     parameter DATA_BUS_WIDTH = `DATA_BUS_WIDTH, // 128 bits
     parameter KERNEL_SIZE = `KERNEL_SIZE,
     parameter KERNEL_SIZE_5_MODE = `KERNEL_SIZE_5_MODE,
-    parameter KERNEL_SIZE_3_MODE = `KERNEL_SIZE_3_MODE
+    parameter KERNEL_SIZE_3_MODE = `KERNEL_SIZE_3_MODE,
+    parameter KERNEL_SIZE_1_MODE = `KERNEL_SIZE_1_MODE
 )(
     input wire clk,  
     input wire rst,
-    input wire kn_size_mode,
+    input wire [1:0] kn_size_mode,
     input wire [KERNEL_SIZE - 1 : 0] spad_rd_en, // former spad's rd_en  (row 1, 2, 3, 4)
     input wire [(KERNEL_SIZE - 1) * FEATURE_WIDTH - 1 : 0] data_in,//row 1, 2, 3, 4
     output reg [(KERNEL_SIZE - 1) * DATA_BUS_WIDTH - 1 : 0] data_out,//row 0, 1, 2, 3
@@ -210,9 +211,15 @@ always @(*) begin
             wr_en[1:0] = wr_en_buffer[1:0];
             wr_en[3:2] = 0;
         end
+        KERNEL_SIZE_1_MODE : begin
+            data_in_inter = 0;
+            data_out = 0;
+            wr_en = 0;
+        end
         default : begin
             data_in_inter = data_in;
             data_out = data_out_inter;
+            wr_en = wr_en_buffer;
         end
     endcase
 end

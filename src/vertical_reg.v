@@ -17,13 +17,13 @@ module vertical_reg #(
     parameter FEATURE_WIDTH = `FEATURE_WIDTH,
     parameter KERNEL_SIZE_5_MODE = `KERNEL_SIZE_5_MODE,
     parameter KERNEL_SIZE_3_MODE = `KERNEL_SIZE_3_MODE,
-    parameter KERNEL_width = `KERNEL_SIZE
+    parameter KERNEL_SIZE_1_MODE = `KERNEL_SIZE_1_MODE
 )(
     input wire clk,
     input wire rst,
     input wire [3:0] com_type,
     input wire [7:0] kernel_size,
-    input wire kn_size_mode,
+    input wire [1:0] kn_size_mode,
     input wire enable,
     input wire in_select,
     input wire shift_mod,
@@ -122,9 +122,9 @@ module shift_reg #(
     parameter KERNEL_SIZE = `KERNEL_SIZE,
     parameter KERNEL_WIDTH = `KERNEL_WIDTH,
     parameter FEATURE_WIDTH = `FEATURE_WIDTH,
-    parameter KERNEL_width = `KERNEL_SIZE,
     parameter KERNEL_SIZE_5_MODE = `KERNEL_SIZE_5_MODE,
     parameter KERNEL_SIZE_3_MODE = `KERNEL_SIZE_3_MODE,
+    parameter KERNEL_SIZE_1_MODE = `KERNEL_SIZE_1_MODE,
     parameter KERNEL_SIZE_3 = `KERNEL_SIZE_3,
     parameter KERNEL_3_BITS = KERNEL_SIZE_3*KERNEL_SIZE_3*FEATURE_WIDTH
 )(
@@ -132,7 +132,7 @@ module shift_reg #(
     input wire rst,
     input wire d_temp_select_0,
     input wire d_temp_select_1,
-    input wire kn_size_mode,
+    input wire [1:0] kn_size_mode,
     input wire [KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] sub_dia_0,
     input wire [KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] sub_dia_1,
     output reg [KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 0] sub_d_temp
@@ -170,6 +170,11 @@ always@(posedge clk or posedge rst) begin
                 sub_d_temp[KERNEL_SIZE*KERNEL_SIZE*FEATURE_WIDTH - 1 : 2*KERNEL_3_BITS] <= 0;
                                                 
             end
+            KERNEL_SIZE_1_MODE : begin
+                sub_d_temp <= (d_temp_select_0 == 1) ? {sub_d_temp[KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], sub_dia_0}
+                            : (d_temp_select_1 == 1) ? {sub_d_temp[KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], sub_dia_1}
+                            : sub_d_temp;
+            end
             default : sub_d_temp <= (d_temp_select_0 == 1) ? {sub_d_temp[KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], sub_dia_0}
                                   : (d_temp_select_1 == 1) ? {sub_d_temp[KERNEL_SIZE*(KERNEL_SIZE-1)*FEATURE_WIDTH-1 : 0], sub_dia_1}
                                   : sub_d_temp;
@@ -187,8 +192,7 @@ module reorder_weight #(
     parameter Tn = `Tn,
     parameter KERNEL_SIZE = `KERNEL_SIZE,
     parameter KERNEL_WIDTH = `KERNEL_WIDTH,
-    parameter FEATURE_WIDTH = `FEATURE_WIDTH,
-    parameter KERNEL_width = `KERNEL_SIZE
+    parameter FEATURE_WIDTH = `FEATURE_WIDTH
 )(
     input clk,
     input rst,

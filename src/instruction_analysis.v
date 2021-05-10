@@ -4,8 +4,13 @@
 // different opcode represents different variable distribution
 
 `timescale 1ns / 1ps
+`include "network_para.vh"
 
-module instruction_decode(
+module instruction_decode#(
+        parameter KERNEL_SIZE_5_MODE = `KERNEL_SIZE_5_MODE,
+        parameter KERNEL_SIZE_3_MODE = `KERNEL_SIZE_3_MODE,
+        parameter KERNEL_SIZE_1_MODE = `KERNEL_SIZE_1_MODE
+    )(
        input   wire             clk,
        input   wire             rst,
        input   wire  [63:0]     instruction,
@@ -43,7 +48,7 @@ module instruction_decode(
        output  reg              line_buffer_mod,
 
        output  reg              feature_out_select,  //0: CLP write feature to ram0           1:  CLP write feature to ram1
-       output  reg              kn_size_mode_config,        //0: kernel size = 5                     1:  kernel size = 3
+       output  reg   [1:0]      kn_size_mode_config,        //0: kernel size = 5        1:  kernel size = 3        2:  kernel size = 1
        output  reg              kn_config_enable 
        );
     
@@ -161,7 +166,7 @@ always@(posedge clk) begin
             end
             8'h20: begin
                 kn_config_enable <= 1;
-                kn_size_mode_config <= reg_1[0];
+                kn_size_mode_config <= reg_1[1:0];
             end
             8'h82: begin
                 $display("Null instruction!!!");

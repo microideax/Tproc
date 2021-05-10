@@ -24,7 +24,7 @@ module scratchpad_feature_mem#(
     input wire [3:0] wr_mem_line,  // select the mem line from the KERNEL_SIZE line of memory
     input wire [3:0] rd_mem_group,
     input wire [3:0] rd_mem_line,
-    input wire kn_size_mode,
+    input wire [1:0] kn_size_mode,
 
     input wire [DATA_BUS_WIDTH-1: 0] i_port,
 
