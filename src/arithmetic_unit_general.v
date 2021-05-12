@@ -526,27 +526,32 @@ module scaler_multiply_unit #(
     input wire clk,
     input wire rst,
     input wire enable,
-    input wire [FEATURE_WIDTH-1 : 0] data_in,
+    input wire [4*FEATURE_WIDTH-1 : 0] data_in,
     input wire [SCALER_WIDTH-1 : 0] scaler_in,
     input wire [4:0] channel_NO_in,
     output wire [4:0] channel_NO_out,
-    output reg [FEATURE_WIDTH+SCALER_WIDTH-1 : 0] data_o
+    output reg [4*FEATURE_WIDTH-1 : 0] data_o
 );
 
 register_x1 #(.FEATURE_WIDTH(5)) lat_1_channel(.clk(clk), .rst(rst), .in_data(channel_NO_in), .o_data(channel_NO_out));
 
+genvar i;
+generate
+    for (i = 0; i < 4; i = i + 1) begin
+        always@(posedge clk) begin
+            if(rst) begin
+                data_o[(i+1)*FEATURE_WIDTH-1:i*FEATURE_WIDTH] <= 0;
+            end
+            else if(enable) begin
+                data_o[(i+1)*FEATURE_WIDTH-1:i*FEATURE_WIDTH] <= data_in[(i+1)*FEATURE_WIDTH-1:i*FEATURE_WIDTH] * scaler_in;
+            end
+            else begin
+                data_o[(i+1)*FEATURE_WIDTH-1:i*FEATURE_WIDTH] <= 0;
+            end
+        end
+    end
+endgenerate
 
-always@(posedge clk) begin
-    if(rst) begin
-        data_o <= 0;
-    end
-    else if(enable) begin
-        data_o <= data_in * scaler_in;
-    end
-    else begin
-        data_o <= 0;
-    end
-end
 endmodule
 
 module N_scaler_multiply_unit #(
@@ -586,24 +591,30 @@ module bias_adder #(
 )(
     input wire clk,
     input wire rst,
-    input wire [FEATURE_WIDTH-1:0] feature,
+    input wire [4*FEATURE_WIDTH-1:0] feature,
     input wire [FEATURE_WIDTH-1:0] bias,
     input wire [4:0] channel_NO_in,
     output wire [4:0] channel_NO_out,
-    output wire [FEATURE_WIDTH-1:0] biased_feature
+    output wire [4*FEATURE_WIDTH-1:0] biased_feature
 );
 
 register_x1 #(.FEATURE_WIDTH(5)) lat_1_channel(.clk(clk), .rst(rst), .in_data(channel_NO_in), .o_data(channel_NO_out));
 
-adder_2in_1out #(
-  .FEATURE_WIDTH(FEATURE_WIDTH)
-  )bias_adder_i(
-    .clk(clk),
-    .rst(rst),
-    .A1 (feature),
-    .B1 (bias),
-    .O  (biased_feature)  
-);
+genvar i;
+generate
+    for (i = 0; i < 4; i = i + 1) begin
+        adder_2in_1out #(
+          .FEATURE_WIDTH(FEATURE_WIDTH)
+          )bias_adder_i(
+            .clk(clk),
+            .rst(rst),
+            .A1 (feature[(i+1)*FEATURE_WIDTH-1 : i*FEATURE_WIDTH]),
+            .B1 (bias),
+            .O  (biased_feature[(i+1)*FEATURE_WIDTH-1 : i*FEATURE_WIDTH])  
+        );
+    end
+endgenerate
+
 
 endmodule 
 

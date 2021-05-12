@@ -157,6 +157,15 @@ always@(posedge clk) begin
                 feature_in_select <= reg_6[0]; // select input buffer
                 line_buffer_mod <= reg_1[0];
             end
+            8'h82: begin//DW CONV
+                com_type <= 8'h02;
+                config_enable <= 1'b1;
+                current_kernel_size <= reg_3;
+                current_feature_size <= reg_2;
+                line_buffer_enable <= reg_4[0];
+                feature_in_select <= reg_6[0]; // select input buffer
+                line_buffer_mod <= reg_1[0];
+            end
             8'h40: begin
                 reg_enable <= reg_1[0];
                 vreg_input_select <= reg_2[0];
@@ -167,10 +176,6 @@ always@(posedge clk) begin
             8'h20: begin
                 kn_config_enable <= 1;
                 kn_size_mode_config <= reg_1[1:0];
-            end
-            8'h82: begin
-                $display("Null instruction!!!");
-                test_exe_done <= 1'b1;
             end
             8'h44: begin
                 $display("System hold for verification!!!");

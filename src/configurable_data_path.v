@@ -50,6 +50,7 @@ module configurable_data_path #(
 // wire shift_done_from_virreg;
 // assign shift_done_from_virreg = shift_done_from_virreg;
 
+//configure part
 reg [7 : 0] com_type_reg;
 always@(posedge clk) begin
   if(rst) begin
@@ -105,6 +106,7 @@ vertical_reg i_vertical_reg(
 
 // virtical_reg w_virtical_reg();
 reg [4:0] out_channel_counter;
+wire [4:0] out_channel_counter_flag;
 reg feature_ready_flag;
 
 always@(posedge clk) begin
@@ -114,9 +116,16 @@ always@(posedge clk) begin
     if(shift_done_from_virreg) begin
         feature_ready_flag <= 1'b1;
       end 
-      else if(out_channel_counter == (Tm-1)) begin
-        feature_ready_flag <= 1'b0;
-      end    
+      else begin
+        case (com_type_reg)
+          8'h01: feature_ready_flag <= (out_channel_counter == (Tm-1)) ? 1'b0 : feature_ready_flag;
+          8'h02: feature_ready_flag <= 1'b0;
+          default : feature_ready_flag <= feature_ready_flag;
+        endcase
+      end
+      //else if(out_channel_counter == (Tm-1)) begin
+      //  feature_ready_flag <= 1'b0;
+      //end    
   end
 end
 
@@ -141,7 +150,15 @@ always@(posedge clk)begin
             end
         end
         8'h02: begin // DWCONV => select array -> kernel adder tree -> scaler_mult => Tn output
-            weight_read_en <= 1'b0;
+            if(feature_ready_flag)begin
+              weight_addr <= out_channel_counter;
+              weight_read_en <= 1'b1;
+              out_channel_counter <= 1'b1;//output channel only count once
+            end else begin
+              weight_addr <= 0;
+              weight_read_en <= 0;
+              out_channel_counter <=0;
+            end
         end
         8'h04: begin // PWCONV => select array -> channel adder tree -> scaler_mult => single output
             weight_read_en <= 1'b0;
@@ -152,6 +169,8 @@ always@(posedge clk)begin
         endcase
       end
 end
+
+//time sequence: +0 clk -- weight_read_en/out_channel_counter    +1 clk -- weight_in/tern_com_channel_NO_in/sel_array_enable
 
 ////////termary_select_array////////
 always@(posedge clk)begin
@@ -221,6 +240,7 @@ adder_tree_Tn_kernel kernel_adder_tree(
 
 ////////channel adder tree////////
 //kn1 mode: skip this
+//dw conv mode: skip this
 wire [4:0] channel_addertree_channel_NO_in, channel_addertree_even_channel_NO_out, channel_addertree_odd_channel_NO_out;
 assign channel_addertree_channel_NO_in = kn_addertree_channel_NO_out;
 wire [FEATURE_WIDTH-1 : 0] tm_feature_temp_even, tm_feature_temp_odd;
@@ -248,29 +268,48 @@ adder_tree_tn channel_adder_tree_odd(
 
 
 ////////scaler module////////
-reg scaler_buffer_rd_en_kn1;
 always @(posedge clk or posedge rst) begin
   if(rst) begin
     scaler_addr <= 0;
-    scaler_buffer_rd_en_kn1 <= 0;
   end else begin
     scaler_addr <= (scaler_buffer_rd_en) ? (scaler_addr + 1) : 0;
-    scaler_buffer_rd_en_kn1 <= ternary_com_done;
   end
 end
-assign scaler_buffer_rd_en = (kn_size_mode == KERNEL_SIZE_1_MODE) ? ternary_com_done : tn_kernel_done;
-wire [FEATURE_WIDTH-1 : 0] scaled_feature_even;
-wire [FEATURE_WIDTH-1 : 0] scaled_feature_odd;
+assign scaler_buffer_rd_en = (com_type_reg == 8'h02) ? ternary_com_done
+                           : (kn_size_mode == KERNEL_SIZE_1_MODE) ? ternary_com_done
+                           : tn_kernel_done;
+
+wire [4*FEATURE_WIDTH-1 : 0] scaled_feature_even, scaler_mul_feature_in_even;
+wire [4*FEATURE_WIDTH-1 : 0] scaled_feature_odd, scaler_mul_feature_in_odd;
 wire [25*FEATURE_WIDTH-1 : 0] scaled_feature_kn1;
+assign scaler_mul_feature_in_even = (com_type_reg == 8'h01) ? {48'b0, tm_feature_temp_even}
+                                  : (com_type_reg == 8'h02) ? {48'b0, tn_kernel_out_even}
+                                  : 0;
+assign scaler_mul_feature_in_odd = (com_type_reg == 8'h01) ? tm_feature_temp_odd
+                                 : (com_type_reg == 8'h02) ? tn_kernel_out_odd
+                                 : 0;
+
 wire [4:0] scaler_even_channel_NO_in, scaler_even_channel_NO_out, scaler_odd_channel_NO_in, scaler_odd_channel_NO_out, scaler_kn1_channel_NO_in, scaler_kn1_channel_NO_out;
-assign scaler_even_channel_NO_in = channel_addertree_even_channel_NO_out;
-assign scaler_odd_channel_NO_in = channel_addertree_odd_channel_NO_out;
+assign scaler_even_channel_NO_in = (com_type_reg == 8'h01) ? channel_addertree_even_channel_NO_out
+                                 : (com_type_reg == 8'h02) ? kn_addertree_channel_NO_out
+                                 : 0;
+assign scaler_odd_channel_NO_in = (com_type_reg == 8'h01) ? channel_addertree_odd_channel_NO_out
+                                : (com_type_reg == 8'h02) ? kn_addertree_channel_NO_out
+                                : 0;
 assign scaler_kn1_channel_NO_in = kn_addertree_channel_NO_out;
+
+wire scal_mul_en_even, scal_mul_en_odd;
+assign scal_mul_en_even = (com_type_reg == 8'h01) ? tn_channel_done_even 
+                        : (com_type_reg == 8'h02) ? tn_kernel_done 
+                        : 0;
+assign scal_mul_en_odd = (com_type_reg == 8'h01) ? tn_channel_done_odd 
+                       : (com_type_reg == 8'h02) ? tn_kernel_done 
+                       : 0;
 scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) single_feature_scaling_unit_even (
     .clk(clk),
     .rst(rst),
-    .enable(tn_channel_done_even),
-    .data_in(tm_feature_temp_even),
+    .enable(scal_mul_en_even),
+    .data_in(scaler_mul_feature_in_even),
     .scaler_in(scaler_data[15 : 0]),
     .channel_NO_in(scaler_even_channel_NO_in),
     .channel_NO_out(scaler_even_channel_NO_out),
@@ -279,8 +318,8 @@ scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) single_
 scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) single_feature_scaling_unit_odd (
     .clk(clk),
     .rst(rst),
-    .enable(tn_channel_done_odd),
-    .data_in(tm_feature_temp_odd),
+    .enable(scal_mul_en_odd),
+    .data_in(scaler_mul_feature_in_odd),
     .scaler_in(scaler_data[15 : 0]),
     .channel_NO_in(scaler_odd_channel_NO_in),
     .channel_NO_out(scaler_odd_channel_NO_out),
@@ -300,8 +339,8 @@ N_scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) singl
 
 
 ////////bias adder////////
-wire [FEATURE_WIDTH-1 : 0] biased_feature_even;
-wire [FEATURE_WIDTH-1 : 0] biased_feature_odd;
+wire [4*FEATURE_WIDTH-1 : 0] biased_feature_even;
+wire [4*FEATURE_WIDTH-1 : 0] biased_feature_odd;
 wire [25*FEATURE_WIDTH-1 : 0] biased_feature_kn1;
 wire [25*FEATURE_WIDTH-1 : 0] bias_data_bus_25;
 wire [4:0] bias_even_channel_NO_in, bias_even_channel_NO_out, bias_odd_channel_NO_in, bias_odd_channel_NO_out, bias_kn1_channel_NO_in, bias_kn1_channel_NO_out;
@@ -310,7 +349,7 @@ assign bias_even_channel_NO_in = scaler_even_channel_NO_out;
 assign bias_odd_channel_NO_in = scaler_odd_channel_NO_out;
 assign bias_kn1_channel_NO_in = scaler_kn1_channel_NO_out;
 
-assign bias_buffer_rd_en = (kn_size_mode == KERNEL_SIZE_1_MODE) ? tn_kernel_done : tn_channel_done_even|tn_channel_done_odd;
+assign bias_buffer_rd_en = (kn_size_mode == KERNEL_SIZE_1_MODE) ? tn_kernel_done : scal_mul_en_even|scal_mul_en_odd;
 
 always @(posedge clk or posedge rst) begin
   if(rst) begin
@@ -430,10 +469,27 @@ always @(posedge clk or posedge rst) begin : proc_
     conv_done_odd <= 0;
     conv_done_kn1 <= 0;
   end else begin
-    enable_cnt <= config_enable ? (enable_cnt + 1) : enable_cnt;
-    conv_done_even <= tm_wr_enable_even[8] ? 1 : 0;
-    conv_done_odd <= tm_wr_enable_odd[8] ? 1 : 0;
-    conv_done_kn1 <= tm_wr_enable_kn1[8] ? 1 : 0;
+    case (com_type_reg)
+      8'h01: begin
+        enable_cnt <= config_enable ? (enable_cnt + 1) : enable_cnt;
+        conv_done_even <= tm_wr_enable_even[8] ? 1 : 0;
+        conv_done_odd <= tm_wr_enable_odd[8] ? 1 : 0;
+        conv_done_kn1 <= tm_wr_enable_kn1[8] ? 1 : 0;
+      end
+      8'h02: begin
+        enable_cnt <= config_enable ? (enable_cnt + 1) : enable_cnt;
+        conv_done_even <= tm_wr_enable_even[1] ? 1 : 0;
+        conv_done_odd <= tm_wr_enable_odd[1] ? 1 : 0;
+        conv_done_kn1 <= tm_wr_enable_kn1[1] ? 1 : 0;
+      end
+      default : begin
+        enable_cnt <= enable_cnt;
+        conv_done_even <= 0;
+        conv_done_odd <= 0;
+        conv_done_kn1 <= 0;
+      end
+    endcase
+
   end
 end
 assign tm_wr_addr = enable_cnt - 1;// to count the writing address
@@ -450,7 +506,7 @@ generate
       .wea(tm_wr_enable_even[i+1]),
       .addra(tm_wr_addr),
       .addrb(),
-      .dia(biased_feature_even),
+      .dia(biased_feature_even[FEATURE_WIDTH-1:0]),
       .dob()
     ); 
     dp_ram #(.RAM_DEPTH(1024), .ADDR_WIDTH(10), .DATA_WIDTH(FEATURE_WIDTH)) tm_data_buffer_odd(
@@ -460,7 +516,7 @@ generate
       .wea(tm_wr_enable_odd[i+1]),
       .addra(tm_wr_addr),
       .addrb(),
-      .dia(biased_feature_odd),
+      .dia(biased_feature_odd[FEATURE_WIDTH-1:0]),
       .dob()
     ); 
   end
@@ -483,13 +539,13 @@ end
 
 always @(posedge tm_wr_enable_even[1]) begin
   #5;
-  $fdisplay(fp_w_even, "%d", biased_feature_even); 
+  $fdisplay(fp_w_even, "%d", biased_feature_even[FEATURE_WIDTH-1:0]); 
   cnt_sim_even <= cnt_sim_even + 1;
 end
 
 always @(posedge tm_wr_enable_odd[1]) begin
   #5;
-  $fdisplay(fp_w_odd, "%d", biased_feature_odd); 
+  $fdisplay(fp_w_odd, "%d", biased_feature_odd[FEATURE_WIDTH-1:0]); 
   cnt_sim_odd <= cnt_sim_odd + 1;
 end
 
