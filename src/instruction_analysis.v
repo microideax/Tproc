@@ -40,16 +40,20 @@ module instruction_decode#(
 
     // interface group to conv/dwconv/deconv
        output  reg   [3:0]   current_kernel_size,
-       output  reg   [7:0]   com_type,
        output  reg           config_enable,
        output  reg   [7:0]   current_feature_size,
        output  reg              line_buffer_enable,
        output  reg              feature_in_select,   //0: CLP read feature from ram0          1:  CLP read feature from ram1
        output  reg              line_buffer_mod,
 
+       output  reg   [7:0]      com_type_config,
        output  reg              feature_out_select,  //0: CLP write feature to ram0           1:  CLP write feature to ram1
        output  reg   [1:0]      kn_size_mode_config,        //0: kernel size = 5        1:  kernel size = 3        2:  kernel size = 1
-       output  reg              kn_config_enable 
+       output  reg              data_path_config_enable,
+       output  reg   [15:0]     layer_width_config,
+       output  reg              wr_rd_mode_config,
+       output  reg              initial_iteration_config,
+       output  reg              A_buffer_read_en 
        );
     
 reg [10:0] feature_amount; 
@@ -112,10 +116,12 @@ always@(posedge clk) begin
         reg_enable <= 0;
         test_exe_done <= 0;
         vreg_input_select <=0;
-        com_type <= 8'h00;
+        com_type_config <= 8'h00;
         config_enable <= 1'b0;
-        kn_config_enable <= 1'b0;
+        data_path_config_enable <= 1'b0;
         kn_size_mode_config <= 0;
+        initial_iteration_config <= 0;
+        A_buffer_read_en <= 0;
     end else begin
         case (opcode)
             8'h01: begin
@@ -123,7 +129,7 @@ always@(posedge clk) begin
                 weight_fetch_enable <= reg_1[0];
                 bias_fetch_enable <= reg_1[1];
                 scaler_fetch_enable <= reg_1[2];
-                com_type <= 8'h00;
+                //com_type_config <= 8'h00;
             end
             8'h02: begin
                 feature_fetch_enable <= ~reg_1[0];
@@ -134,7 +140,7 @@ always@(posedge clk) begin
                 dst_addr <= {reg_4[3:0], reg_5[3:0]};
                 mem_sel <= reg_6;
                 fetch_counter <= reg_7;
-                com_type <= 8'h00;
+                //com_type_config <= 8'h00;
             end
             8'h04: begin
                 feature_fetch_enable <= (reg_1 == 0) ? 1 : 0;//~reg_1[0];
@@ -146,10 +152,10 @@ always@(posedge clk) begin
                 dst_addr <= {reg_4[3:0], reg_5[3:0]}; // reg_4 is not used in the current stage
                 mem_sel <= reg_6;
                 fetch_counter <= reg_7;
-                com_type <= 8'h00;
+                //com_type_config <= 8'h00;
             end
             8'h81: begin//CONV
-                com_type <= 8'h01;
+                //com_type_config <= 8'h01;
                 config_enable <= 1'b1;
                 current_kernel_size <= reg_3;
                 current_feature_size <= reg_2;
@@ -158,7 +164,7 @@ always@(posedge clk) begin
                 line_buffer_mod <= reg_1[0];
             end
             8'h82: begin//DW CONV
-                com_type <= 8'h02;
+                //com_type_config <= 8'h02;
                 config_enable <= 1'b1;
                 current_kernel_size <= reg_3;
                 current_feature_size <= reg_2;
@@ -169,13 +175,20 @@ always@(posedge clk) begin
             8'h40: begin
                 reg_enable <= reg_1[0];
                 vreg_input_select <= reg_2[0];
-                com_type <= 8'h00;
+                //com_type_config <= 8'h00;
                 config_enable <= 1'b0;
                 line_buffer_mod <= reg_3[0]; //ruidi 25/2/2021
             end
             8'h20: begin
-                kn_config_enable <= 1;
+                data_path_config_enable <= 1;
                 kn_size_mode_config <= reg_1[1:0];
+                layer_width_config <= {reg_6, reg_7};
+                wr_rd_mode_config <= {reg_3[0]};
+                com_type_config <= reg_2;
+                initial_iteration_config <= reg_4[0];
+            end
+            8'h60: begin
+                A_buffer_read_en <= 1;
             end
             8'h44: begin
                 $display("System hold for verification!!!");
@@ -194,11 +207,15 @@ always@(posedge clk) begin
                 reg_enable <= 0;
                 test_exe_done <= 0;
                 vreg_input_select <= 0;
-                com_type <= 8'h00;
+                com_type_config <= 8'h00;
                 current_kernel_size <= 8'h00;
                 config_enable <= 1'b0;
-                kn_config_enable <= 1'b0;
+                data_path_config_enable <= 1'b0;
                 kn_size_mode_config <= 0;
+                layer_width_config <= 0;
+                wr_rd_mode_config <= 0;
+                initial_iteration_config <= 0;
+                A_buffer_read_en <= 0;
             end
         endcase
     end

@@ -66,7 +66,16 @@ wire i_mem_empty;
 wire i_mem_full;
 wire [1:0] kn_size_mode;
 wire [1:0] kn_size_mode_config;
-wire kn_config_enable;
+wire data_path_config_enable;
+wire [15:0] layer_width_config;
+wire [15:0] layer_width;
+wire initial_iteration_config;
+wire initial_iteration;
+wire wr_rd_mode_config;
+wire wr_rd_mode;
+wire instr_mem_wr_enable;
+wire A_buffer_cnt_rst;
+wire A_buffer_read_en;
 
 instr_fetch instruction_fetcher(
 .clk(clk),
@@ -155,22 +164,24 @@ wire [7:0]  dst_addr;
 wire [7:0]  mem_sel;
 wire [7:0]  fetch_counter;
 
-
+wire data_path_config_done;
 wire fetch_done_from_i;
 wire fetch_done_from_w;
 wire shift_done_from_virreg;
+wire test_exe_done;
+wire compute_done;
 
-assign fetch_done_wire = fetch_done_from_i | fetch_done_from_w | shift_done_from_virreg | test_exe_done | compute_done | kn_config_done;
+assign fetch_done_wire = fetch_done_from_i | fetch_done_from_w | shift_done_from_virreg | test_exe_done | compute_done | data_path_config_done;
 
 wire [3:0] current_kernel_size;
-wire [7:0] com_type_wire;
+wire [7:0] com_type_config;
+wire [7:0] com_type;
 wire [7:0] current_feature_size;
 wire line_buffer_enable;
 wire feature_in_select;
 wire line_buffer_mod;
 wire virtical_reg_shift;
 wire virreg_input_sel;
-wire test_exe_done;
 
 wire config_clp;
 
@@ -203,7 +214,7 @@ instruction_decode instruction_decoder(
 
 // the following ports are idle for now, TODO: delete or use in the other operations
                       .current_kernel_size(current_kernel_size),
-                      .com_type(com_type_wire),
+                      .com_type_config(com_type_config),
                       .config_enable(config_clp),
                       .current_feature_size(current_feature_size),
                       .line_buffer_enable(line_buffer_enable),
@@ -211,18 +222,36 @@ instruction_decode instruction_decoder(
                       .line_buffer_mod(line_buffer_mod),
                       .feature_out_select(feature_out_select),
                       .kn_size_mode_config(kn_size_mode_config),
-                      .kn_config_enable(kn_config_enable)
+                      .data_path_config_enable(data_path_config_enable),
+                      .layer_width_config(layer_width_config),
+                      .initial_iteration_config(initial_iteration_config),
+                      .wr_rd_mode_config(wr_rd_mode_config),
+                      .A_buffer_read_en(A_buffer_read_en)
                     );     
 
-wire kn_config_done;
+data_path_config i_datapath_config(
+  .clk                     (clk),
+  .rst                     (rst),
+ 
+  .data_path_config_enable (data_path_config_enable),
+  .data_path_config_done   (data_path_config_done),
+   
+  .kn_size_mode_config     (kn_size_mode_config),
+  .kn_size_mode            (kn_size_mode),
+   
+  .wr_rd_mode_config       (wr_rd_mode_config),
+  .wr_rd_mode              (wr_rd_mode),
+ 
+  .layer_width_config      (layer_width_config),
+  .layer_width             (layer_width),
+ 
+  .com_type_config         (com_type_config),
+  .com_type                (com_type),
 
-kernel_size_configure i_kn_config(
-  .clk                (clk),
-  .rst                (rst),
-  .kn_size_mode_config(kn_size_mode_config),
-  .kn_config_enable   (kn_config_enable),
-  .kn_size_mode       (kn_size_mode),
-  .kn_config_done     (kn_config_done)
+  .initial_iteration_config(initial_iteration_config),
+  .initial_iteration       (initial_iteration),
+
+  .A_buffer_cnt_rst        (A_buffer_cnt_rst)
 );
                     
 wire                                     feature_mem_enable;
@@ -488,9 +517,14 @@ configurable_data_path #(
 
         .config_enable(config_clp),
         .config_clear(),
-        .com_type(com_type_wire),
+        .com_type(com_type),
         .kernel_size(current_kernel_size),
         .kn_size_mode(kn_size_mode),
+        .layer_width(layer_width),
+        .wr_rd_mode(wr_rd_mode),
+        .A_buffer_cnt_rst(A_buffer_cnt_rst),
+        .initial_iteration(initial_iteration),
+        .A_buffer_read_en(A_buffer_read_en),
     
         .vertical_shift_mod(line_buffer_mod),
         .virtical_reg_shift(virtical_reg_shift),

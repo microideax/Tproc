@@ -29,3 +29,5 @@
 `define KERNEL_SIZE_5_MODE              0
 `define KERNEL_SIZE_3_MODE              1
 `define KERNEL_SIZE_1_MODE              2
+`define A_BUFFER_DEPTH					256
+`define A_BUFFER_NUM					25					

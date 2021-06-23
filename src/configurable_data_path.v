@@ -10,6 +10,8 @@ module configurable_data_path #(
     parameter KERNEL_SIZE = `KERNEL_SIZE,
     parameter KERNEL_WIDTH = `KERNEL_WIDTH,
     parameter SCALER_WIDTH = `SCALER_WIDTH,
+    parameter KERNEL_SIZE_5_MODE = `KERNEL_SIZE_5_MODE,
+    parameter KERNEL_SIZE_3_MODE = `KERNEL_SIZE_3_MODE,
     parameter KERNEL_SIZE_1_MODE = `KERNEL_SIZE_1_MODE,
     parameter Tm = `Tm
 ) (
@@ -18,9 +20,15 @@ module configurable_data_path #(
 
     input wire config_enable,
     input wire config_clear,//temporally replaced by conv_done
-    input wire [7:0] com_type,
     input wire [3:0] kernel_size,
+    
+    input wire [7:0] com_type,
     input wire [1:0] kn_size_mode,
+    input wire [15:0] layer_width,
+    input wire wr_rd_mode,
+    input wire A_buffer_cnt_rst,
+    input wire initial_iteration,
+    input wire A_buffer_read_en,
 
     input wire vertical_shift_mod,
     input wire virtical_reg_shift,
@@ -52,7 +60,7 @@ module configurable_data_path #(
 
 //configure part
 reg [7 : 0] com_type_reg;
-always@(posedge clk) begin
+always@(posedge clk or posedge rst) begin
   if(rst) begin
     com_type_reg <= 8'h00;
   end 
@@ -115,14 +123,14 @@ always@(posedge clk) begin
   end else begin
     if(shift_done_from_virreg) begin
         feature_ready_flag <= 1'b1;
-      end 
-      else begin
-        case (com_type_reg)
-          8'h01: feature_ready_flag <= (out_channel_counter == (Tm-1)) ? 1'b0 : feature_ready_flag;
-          8'h02: feature_ready_flag <= 1'b0;
-          default : feature_ready_flag <= feature_ready_flag;
-        endcase
-      end
+    end 
+    else begin
+      case (com_type_reg)
+        8'h01: feature_ready_flag <= (out_channel_counter == (Tm-1)) ? 1'b0 : feature_ready_flag;
+        8'h02: feature_ready_flag <= 1'b0;
+        default : feature_ready_flag <= feature_ready_flag;
+      endcase
+    end      
       //else if(out_channel_counter == (Tm-1)) begin
       //  feature_ready_flag <= 1'b0;
       //end    
@@ -341,7 +349,7 @@ N_scaler_multiply_unit #(.FEATURE_WIDTH(FEATURE_WIDTH), .SCALER_WIDTH(16)) singl
 ////////bias adder////////
 wire [4*FEATURE_WIDTH-1 : 0] biased_feature_even;
 wire [4*FEATURE_WIDTH-1 : 0] biased_feature_odd;
-wire [25*FEATURE_WIDTH-1 : 0] biased_feature_kn1;
+wire [25*FEATURE_WIDTH-1 : 0] biased_feature_kn1, biased_feature_kn1_reorder;
 wire [25*FEATURE_WIDTH-1 : 0] bias_data_bus_25;
 wire [4:0] bias_even_channel_NO_in, bias_even_channel_NO_out, bias_odd_channel_NO_in, bias_odd_channel_NO_out, bias_kn1_channel_NO_in, bias_kn1_channel_NO_out;
 
@@ -396,6 +404,17 @@ bias_adder_tree_25 #(.FEATURE_WIDTH(`FEATURE_WIDTH)) bias_adder_tree_kn1 (
     .channel_NO_out(bias_kn1_channel_NO_out),
     .biased_feature(biased_feature_kn1)
 );
+
+//kn1_biased_feature_reorder
+// col num = i%5     row num = i/5      j=row num + (4-col_num)*5 = i/5+(4-i%5)*5
+genvar k;
+generate
+  for (k = 0; k < 25; k = k + 1) begin
+    assign biased_feature_kn1_reorder[(k+1)*FEATURE_WIDTH-1:k*FEATURE_WIDTH] =  biased_feature_kn1[(k/5+(4-k%5)*5+1)*FEATURE_WIDTH-1:(k/5+(4-k%5)*5)*FEATURE_WIDTH];
+  end
+endgenerate
+
+
 
 // assign tm_scaled_feature = scaled_feature;
 
@@ -458,7 +477,7 @@ assign tm_wr_enable_kn1 = 1 << bias_kn1_channel_NO_out;
 //   end
 // end
 
-reg conv_done_even, conv_done_odd, conv_done_kn1;
+reg conv_done_even, conv_done_odd, conv_done_kn1, rd_done;
 reg [15:0] enable_cnt;
 wire [15:0] tm_wr_addr;
 
@@ -493,7 +512,66 @@ always @(posedge clk or posedge rst) begin : proc_
   end
 end
 assign tm_wr_addr = enable_cnt - 1;// to count the writing address
-assign compute_done = conv_done_even|conv_done_odd|conv_done_kn1;
+assign compute_done = conv_done_even|conv_done_odd|conv_done_kn1|rd_done;
+
+
+
+wire [4:0] channel_NO_out;
+wire [25*FEATURE_WIDTH-1:0] A_buffer_data_in, A_buffer_data_out;
+wire [15:0] total_rd_num;
+reg [15:0] rd_cnt;
+wire rd_out_en_single;
+assign channel_NO_out = (kn_size_mode == KERNEL_SIZE_5_MODE) ? bias_even_channel_NO_out
+                      : (kn_size_mode == KERNEL_SIZE_3_MODE) ? bias_even_channel_NO_out
+                      : (kn_size_mode == KERNEL_SIZE_1_MODE) ? bias_kn1_channel_NO_out
+                      : bias_even_channel_NO_out;//default
+assign A_buffer_data_in = (kn_size_mode == KERNEL_SIZE_5_MODE && com_type == 8'h01) ? {384'b0, biased_feature_even[FEATURE_WIDTH-1:0]}
+                        : (kn_size_mode == KERNEL_SIZE_3_MODE && com_type == 8'h01) ? {368'b0, biased_feature_odd[FEATURE_WIDTH-1:0], biased_feature_even[FEATURE_WIDTH-1:0]}
+                        : (kn_size_mode == KERNEL_SIZE_5_MODE && com_type == 8'h02) ? {336'b0, biased_feature_even}
+                        : (kn_size_mode == KERNEL_SIZE_3_MODE && com_type == 8'h02) ? {272'b0, biased_feature_odd, biased_feature_even}
+                        : (kn_size_mode == KERNEL_SIZE_1_MODE && com_type == 8'h01) ? biased_feature_kn1_reorder
+                        : 0;
+
+///////this part will be integrated into output module in the future:                        
+wire [3:0] total_row_num, total_channel_num;
+assign total_row_num = (kn_size_mode == KERNEL_SIZE_3_MODE) ? 4 : 5;
+assign total_channel_num = (com_type == 8'h01) ? 8 //conv
+                         : (com_type == 8'h02) ? 4 //dw conv
+                         : 8;//default
+assign total_rd_num = total_row_num*(layer_width/25+(layer_width%25 != 0))*total_channel_num;
+always @(posedge clk or posedge rst) begin
+  if(rst) begin
+    rd_cnt <= 0;
+    rd_done <= 0;
+  end else begin
+    rd_cnt <= (wr_rd_mode == 0 && A_buffer_read_en) ? total_rd_num 
+            : (wr_rd_mode == 0 && rd_cnt != 0) ? rd_cnt - 1
+            : 0;
+    rd_done <= (rd_cnt == 1) ? 1 : 0;
+  end
+end
+assign rd_out_en_single = (rd_cnt != 0) ? 1 : 0;
+/////////////////////////////////////////////////////////////////////
+output_module inst_output_module (
+  .clk                (clk),
+  .rst                (rst),
+  .initial_iteration  (initial_iteration),
+  .cnt_rst            (A_buffer_cnt_rst),
+  .layer_width        (layer_width),
+  .kn_size_mode       (kn_size_mode),
+  .com_type           (com_type),
+  .wr_rd_mode         (wr_rd_mode),
+  .current_channel_NO (channel_NO_out),
+  .rd_out_en          (rd_out_en_single),
+  .data_in            (A_buffer_data_in),
+  .data_out           (A_buffer_data_out)
+);
+
+
+
+
+
+
 
 
 genvar i;
@@ -522,6 +600,7 @@ generate
   end
 endgenerate
 
+
 /////////////////////////only for simulation/////////////////////////
 integer fp_w_even, fp_w_odd, fp_w_kn1;
 genvar n;
@@ -549,20 +628,6 @@ always @(posedge tm_wr_enable_odd[1]) begin
   cnt_sim_odd <= cnt_sim_odd + 1;
 end
 
-//always @(posedge tm_wr_enable_kn1[1]) begin
-//  #5;    
-//  $fdisplay(fp_w_kn1, "%d", biased_feature_kn1); 
-//end
-
-//generate
-//  for (n = 0; n < 25; n=n+1) begin
-//    always @(posedge tm_wr_enable_kn1[1]) begin
-//      #n;    
-//      $fdisplay(fp_w_kn1, "%d", biased_feature_kn1[(n+1)*FEATURE_WIDTH-1:n*FEATURE_WIDTH]); 
-//      //$fdisplay(fp_w_kn1, "%d", n); 
-//    end
-//  end 
-//endgenerate
 
 wire tn_kernel_done_t;
 register_x1 #(.FEATURE_WIDTH(1)) lat(.clk(clk), .rst(rst), .in_data(tn_kernel_done), .o_data(tn_kernel_done_t));
@@ -582,23 +647,62 @@ endmodule
 
 
 
-module kernel_size_configure (
+module data_path_config (
   input wire          clk,
   input wire          rst,
+
+  input wire          data_path_config_enable,
+  output reg          data_path_config_done,
+  
   input wire  [1:0]   kn_size_mode_config,
-  input wire          kn_config_enable,
   output reg  [1:0]   kn_size_mode,
-  output reg          kn_config_done
+  
+  input wire  [15:0]  layer_width_config,
+  output reg  [15:0]  layer_width,
+  
+  input wire          wr_rd_mode_config,
+  output reg          wr_rd_mode,
+
+  input wire  [7:0]   com_type_config,
+  output reg  [7:0]   com_type,
+
+  input wire          initial_iteration_config,
+  output reg          initial_iteration,
+
+  output reg          A_buffer_cnt_rst
 );
 
   always @(posedge clk or posedge rst) begin
     if(rst) begin
+      data_path_config_done <= 0;
       kn_size_mode <= 0;
-      kn_config_done <= 0;
+      wr_rd_mode <= 0;
+      layer_width <= 0;
+      com_type <= 0;
+      A_buffer_cnt_rst <= 0;
+      initial_iteration <= 0;
     end else begin
-      kn_size_mode <= kn_config_enable ? kn_size_mode_config : kn_size_mode;
-      kn_config_done <= kn_config_enable ? 1 : 0;
+      if (data_path_config_enable) begin
+        data_path_config_done <= 1;
+        kn_size_mode <= kn_size_mode_config;
+        wr_rd_mode <= wr_rd_mode_config;
+        layer_width <= layer_width_config;
+        com_type <= com_type_config;
+        A_buffer_cnt_rst <= 1;
+        initial_iteration <= initial_iteration_config;
+      end
+      else begin
+        data_path_config_done <= 0;
+        kn_size_mode <= kn_size_mode;
+        wr_rd_mode <= wr_rd_mode;
+        layer_width <= layer_width;
+        com_type <= com_type;
+        A_buffer_cnt_rst <= 0;
+        initial_iteration <= initial_iteration;
+      end
     end
   end
-
 endmodule
+
+
+
